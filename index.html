@@ -1,118 +1,1808 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Trideva Interactive</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-    }
-    header {
-      background: #1a1a1a;
-      color: white;
-      padding: 3rem 1rem;
-      text-align: center;
-    }
-    section {
-      padding: 3rem 1rem;
-    }
-    .btn-download {
-      margin: 0.5rem;
-    }
-    footer {
-      background: #111;
-      color: white;
-      text-align: center;
-      padding: 1rem;
-    }
-    .game-card {
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      padding: 1rem;
-      margin-bottom: 2rem;
-      background-color: #f8f9fa;
-    }
-    .game-card h4 {
-      color: #003366;
-    }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Trideva Interactive — Game Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+<style>
+/* ═══════════════════════════════════════════════
+   CSS VARIABLES & RESET
+═══════════════════════════════════════════════ */
+:root {
+  --black:   #03050a;
+  --dark:    #080d18;
+  --panel:   #0c1322;
+  --card:    rgba(12,20,38,0.75);
+  --border:  rgba(0,168,255,0.12);
+  --blue:    #00a8ff;
+  --orange:  #ff6a00;
+  --cyan:    #00e5ff;
+  --gold:    #ffca28;
+  --red:     #ff3d57;
+  --text:    #d0dff5;
+  --muted:   #46607e;
+  --glow-b:  0 0 40px rgba(0,168,255,0.35);
+  --glow-o:  0 0 40px rgba(255,106,0,0.35);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--black);
+  color: var(--text);
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--black); }
+::-webkit-scrollbar-thumb { background: var(--blue); border-radius: 2px; }
+
+/* ═══════════════════════════════════════════════
+   CUSTOM CURSOR
+═══════════════════════════════════════════════ */
+#cursor {
+  position: fixed; top: 0; left: 0;
+  width: 10px; height: 10px;
+  background: var(--blue);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10000;
+  transition: transform 0.1s, background 0.2s;
+  transform: translate(-50%,-50%);
+}
+#cursor-ring {
+  position: fixed; top: 0; left: 0;
+  width: 36px; height: 36px;
+  border: 1.5px solid rgba(0,168,255,0.55);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%,-50%);
+  transition: transform 0.25s cubic-bezier(.18,.89,.32,1.28),
+              width 0.2s, height 0.2s, border-color 0.2s;
+}
+body:hover #cursor-ring { border-color: rgba(0,168,255,0.55); }
+a:hover ~ #cursor, button:hover ~ #cursor { background: var(--orange); }
+
+/* ═══════════════════════════════════════════════
+   LOADING SCREEN
+═══════════════════════════════════════════════ */
+#loader {
+  position: fixed; inset: 0;
+  background: var(--black);
+  z-index: 9998;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.8s ease, visibility 0.8s;
+}
+#loader.gone { opacity: 0; visibility: hidden; }
+.loader-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  letter-spacing: .2em;
+  color: var(--text);
+  margin-bottom: 48px;
+  overflow: hidden;
+}
+.loader-logo span { color: var(--blue); }
+.loader-bar-wrap {
+  width: 240px; height: 2px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 1px; overflow: hidden;
+}
+.loader-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  border-radius: 1px;
+  width: 0%;
+  animation: loadBar 2s ease forwards;
+}
+@keyframes loadBar { to { width: 100%; } }
+.loader-pct {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .7rem;
+  color: var(--muted);
+  letter-spacing: .2em;
+  margin-top: 12px;
+}
+
+/* ═══════════════════════════════════════════════
+   NOISE TEXTURE OVERLAY
+═══════════════════════════════════════════════ */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='.035'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9997; opacity: .6;
+}
+
+/* ═══════════════════════════════════════════════
+   NAVBAR
+═══════════════════════════════════════════════ */
+nav {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 500;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 clamp(20px, 5vw, 72px);
+  height: 72px;
+  background: rgba(3,5,10,0.0);
+  border-bottom: 1px solid transparent;
+  transition: background .4s, border-color .4s, backdrop-filter .4s;
+}
+nav.scrolled {
+  background: rgba(3,5,10,0.92);
+  border-color: var(--border);
+  backdrop-filter: blur(20px);
+}
+.nav-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: .18em;
+  color: var(--text);
+  text-decoration: none;
+  display: flex; align-items: center; gap: 10px;
+}
+.nav-logo-mark {
+  width: 30px; height: 30px;
+  background: var(--blue);
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  box-shadow: 0 0 20px rgba(0,168,255,.4);
+}
+.nav-links {
+  display: flex; gap: 36px; list-style: none;
+}
+.nav-links a {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .72rem; font-weight: 500;
+  letter-spacing: .15em;
+  color: var(--muted);
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color .2s;
+  position: relative;
+}
+.nav-links a::after {
+  content: ''; position: absolute;
+  bottom: -4px; left: 0; width: 0; height: 1px;
+  background: var(--blue);
+  transition: width .3s;
+}
+.nav-links a:hover { color: var(--blue); }
+.nav-links a:hover::after { width: 100%; }
+
+.nav-cta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .7rem; font-weight: 500;
+  letter-spacing: .1em; text-transform: uppercase;
+  padding: 10px 22px;
+  background: transparent;
+  color: var(--blue);
+  border: 1px solid rgba(0,168,255,.35);
+  border-radius: 3px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all .2s;
+}
+.nav-cta:hover {
+  background: rgba(0,168,255,.1);
+  border-color: var(--blue);
+  box-shadow: var(--glow-b);
+}
+
+/* hamburger */
+.hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; }
+.hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 1px; transition: all .3s; }
+
+/* mobile menu */
+.mobile-menu {
+  display: none; position: fixed;
+  top: 72px; left: 0; right: 0;
+  background: rgba(3,5,10,.97);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 24px clamp(20px,5vw,72px);
+  flex-direction: column; gap: 20px;
+  z-index: 490;
+}
+.mobile-menu.open { display: flex; }
+.mobile-menu a { color: var(--text); text-decoration: none; font-size: 1rem; font-weight: 600; letter-spacing: .05em; }
+
+/* ═══════════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════════ */
+#hero {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; text-align: center;
+  padding: 120px 24px 80px;
+  position: relative; overflow: hidden;
+}
+
+/* Canvas particle bg */
+#hero-canvas {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  pointer-events: none;
+}
+
+/* Grid overlay */
+.hero-grid {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(rgba(0,168,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,168,255,.025) 1px, transparent 1px);
+  background-size: 80px 80px;
+  pointer-events: none;
+}
+
+/* Radial glow center */
+.hero-glow-center {
+  position: absolute;
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 700px; height: 700px;
+  background: radial-gradient(circle, rgba(0,168,255,.07) 0%, transparent 65%);
+  pointer-events: none;
+}
+.hero-glow-orange {
+  position: absolute;
+  top: 60%; left: 65%; transform: translate(-50%,-50%);
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(255,106,0,.06) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+/* Scanlines */
+.scanlines {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(0,0,0,.06) 3px, rgba(0,0,0,.06) 4px);
+  pointer-events: none; opacity: .5;
+}
+
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 18px;
+  border: 1px solid rgba(0,168,255,.25);
+  border-radius: 50px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .68rem; font-weight: 500;
+  letter-spacing: .2em; text-transform: uppercase;
+  color: var(--blue);
+  background: rgba(0,168,255,.06);
+  margin-bottom: 28px;
+  animation: fadeUp .9s ease both;
+}
+.eyebrow-dot {
+  width: 5px; height: 5px;
+  background: var(--blue); border-radius: 50%;
+  animation: pulse 1.5s ease infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.7)} }
+
+.hero-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(3.5rem, 10vw, 10rem);
+  line-height: .9; letter-spacing: .06em;
+  margin-bottom: 6px;
+  animation: fadeUp .9s .1s ease both;
+  position: relative;
+}
+.hero-title .t-blue { color: var(--blue); text-shadow: 0 0 60px rgba(0,168,255,.5); }
+.hero-title .t-outline {
+  -webkit-text-stroke: 1.5px rgba(255,255,255,.15);
+  color: transparent;
+}
+
+.hero-sub {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(1rem, 2.5vw, 2rem);
+  letter-spacing: .3em;
+  color: var(--orange);
+  text-shadow: 0 0 30px rgba(255,106,0,.4);
+  margin-bottom: 32px;
+  animation: fadeUp .9s .2s ease both;
+}
+
+.typewriter-wrap {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(.8rem, 1.5vw, 1rem);
+  color: var(--muted);
+  letter-spacing: .05em;
+  margin-bottom: 52px;
+  min-height: 1.6em;
+  animation: fadeUp .9s .3s ease both;
+}
+#typewriter::after {
+  content: '|';
+  animation: blink .8s ease infinite;
+  color: var(--blue);
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+.hero-buttons {
+  display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+  animation: fadeUp .9s .4s ease both;
+}
+
+.btn-primary {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem; letter-spacing: .2em;
+  padding: 16px 48px;
+  background: var(--blue);
+  color: var(--black);
+  border: none; border-radius: 3px;
+  cursor: pointer;
+  transition: all .25s;
+  box-shadow: 0 0 40px rgba(0,168,255,.35);
+  text-decoration: none; display: inline-block;
+  position: relative; overflow: hidden;
+}
+.btn-primary::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.2), transparent);
+  opacity: 0; transition: opacity .2s;
+}
+.btn-primary:hover { transform: translateY(-3px); box-shadow: 0 0 60px rgba(0,168,255,.6); }
+.btn-primary:hover::before { opacity: 1; }
+
+.btn-ghost {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem; letter-spacing: .2em;
+  padding: 15px 48px;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 3px; cursor: pointer;
+  transition: all .25s; text-decoration: none; display: inline-block;
+}
+.btn-ghost:hover {
+  border-color: rgba(255,255,255,.35);
+  background: rgba(255,255,255,.04);
+  transform: translateY(-3px);
+}
+
+.scroll-indicator {
+  position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .6rem; letter-spacing: .2em;
+  animation: fadeUp 1s .8s ease both;
+}
+.scroll-mouse {
+  width: 22px; height: 34px;
+  border: 1.5px solid var(--muted);
+  border-radius: 12px;
+  display: flex; justify-content: center; padding-top: 6px;
+}
+.scroll-mouse-dot {
+  width: 3px; height: 6px;
+  background: var(--blue); border-radius: 2px;
+  animation: scrollDot 1.5s ease infinite;
+}
+@keyframes scrollDot { 0%,100%{transform:translateY(0);opacity:1} 50%{transform:translateY(8px);opacity:.3} }
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(24px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════
+   SECTION SHARED
+═══════════════════════════════════════════════ */
+.section-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .68rem; font-weight: 500;
+  letter-spacing: .3em; text-transform: uppercase;
+  color: var(--blue); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-eyebrow::before {
+  content: ''; display: inline-block;
+  width: 30px; height: 1px; background: var(--blue);
+}
+.section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2rem, 5vw, 4.5rem);
+  letter-spacing: .05em; line-height: 1;
+  margin-bottom: 16px;
+}
+.section-desc {
+  color: var(--muted); font-size: .95rem; line-height: 1.85;
+  max-width: 560px;
+}
+
+/* Reveal animation */
+.reveal {
+  opacity: 0; transform: translateY(40px);
+  transition: opacity .8s ease, transform .8s ease;
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-left  { opacity: 0; transform: translateX(-40px); transition: opacity .8s ease, transform .8s ease; }
+.reveal-right { opacity: 0; transform: translateX(40px);  transition: opacity .8s ease, transform .8s ease; }
+.reveal-left.visible, .reveal-right.visible { opacity: 1; transform: translateX(0); }
+
+/* ═══════════════════════════════════════════════
+   STATS BAR
+═══════════════════════════════════════════════ */
+#stats {
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 0;
+}
+.stats-inner {
+  max-width: 1100px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(4,1fr);
+  divide: left;
+}
+.stat-item {
+  padding: 36px 24px;
+  text-align: center;
+  border-right: 1px solid var(--border);
+  position: relative;
+  transition: background .3s;
+}
+.stat-item:last-child { border-right: none; }
+.stat-item:hover { background: rgba(0,168,255,.04); }
+.stat-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3rem; letter-spacing: .05em;
+  color: var(--blue); line-height: 1;
+  text-shadow: 0 0 20px rgba(0,168,255,.3);
+}
+.stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .65rem; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--muted);
+  margin-top: 6px;
+}
+
+/* ═══════════════════════════════════════════════
+   ABOUT
+═══════════════════════════════════════════════ */
+#about {
+  padding: 120px clamp(20px,7vw,80px);
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1.1fr;
+  gap: 80px; align-items: center;
+}
+.about-left .section-desc { max-width: 480px; margin-bottom: 36px; }
+.about-right {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 40px;
+  backdrop-filter: blur(12px);
+  position: relative; overflow: hidden;
+}
+.about-right::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--blue), var(--cyan), transparent);
+}
+
+.skill-row {
+  margin-bottom: 24px;
+}
+.skill-row:last-child { margin-bottom: 0; }
+.skill-info {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+.skill-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .78rem; letter-spacing: .05em; color: var(--text);
+}
+.skill-pct {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .7rem; color: var(--blue);
+}
+.skill-track {
+  height: 3px; background: rgba(255,255,255,.07); border-radius: 2px; overflow: hidden;
+}
+.skill-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  width: 0%;
+  transition: width 1.2s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 0 8px rgba(0,168,255,.4);
+}
+.skill-fill.orange { background: linear-gradient(90deg, var(--orange), #ffca28); box-shadow: 0 0 8px rgba(255,106,0,.4); }
+.skill-fill.cyan   { background: linear-gradient(90deg, var(--cyan), #00e5ff80); }
+.skill-fill.gold   { background: linear-gradient(90deg, var(--gold), #fff176); box-shadow: 0 0 8px rgba(255,202,40,.4); }
+
+.about-badges {
+  display: flex; flex-wrap: wrap; gap: 10px; margin-top: 32px;
+}
+.badge {
+  padding: 6px 16px;
+  border: 1px solid rgba(0,168,255,.2);
+  border-radius: 50px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .68rem; letter-spacing: .1em;
+  color: var(--blue); background: rgba(0,168,255,.06);
+}
+.badge.orange { border-color: rgba(255,106,0,.2); color: var(--orange); background: rgba(255,106,0,.06); }
+
+/* ═══════════════════════════════════════════════
+   GAMES SECTION
+═══════════════════════════════════════════════ */
+#games {
+  padding: 120px clamp(20px,5vw,60px);
+  max-width: 1300px; margin: 0 auto;
+}
+.games-header {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  margin-bottom: 64px; flex-wrap: wrap; gap: 20px;
+}
+
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.game-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  transition: all .4s cubic-bezier(.4,0,.2,1);
+  position: relative;
+  group: true;
+}
+.game-card::before {
+  content: ''; position: absolute;
+  inset: 0; border-radius: 12px;
+  background: linear-gradient(135deg, rgba(0,168,255,.06), transparent);
+  opacity: 0; transition: opacity .4s;
+  pointer-events: none; z-index: 1;
+}
+.game-card:hover {
+  transform: translateY(-10px);
+  border-color: rgba(0,168,255,.4);
+  box-shadow: 0 30px 60px rgba(0,0,0,.5), 0 0 40px rgba(0,168,255,.15);
+}
+.game-card:hover::before { opacity: 1; }
+
+/* First card — featured, spans 2 rows conceptually */
+.game-card.featured {
+  grid-row: span 1;
+}
+
+.game-thumb {
+  position: relative; overflow: hidden;
+  height: 220px;
+}
+.game-thumb-bg {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 5rem;
+  transition: transform .5s cubic-bezier(.4,0,.2,1);
+  position: relative;
+}
+.game-card:hover .game-thumb-bg { transform: scale(1.05); }
+
+/* Game 1 — TVM Bus */
+.thumb-tvm {
+  background: linear-gradient(135deg, #0a1628 0%, #0d2040 50%, #0a1628 100%);
+}
+.thumb-tvm-svg {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 50%, rgba(0,168,255,.15) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, rgba(255,106,0,.1) 0%, transparent 50%);
+}
+/* Game 2 — Oye Chor */
+.thumb-chor {
+  background: linear-gradient(135deg, #1a0a0a 0%, #2d1010 50%, #1a0a0a 100%);
+}
+.thumb-chor-svg {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, rgba(255,60,57,.12) 0%, transparent 65%);
+}
+/* Game 3 — Yakshiyugam */
+.thumb-yak {
+  background: linear-gradient(135deg, #050a0a 0%, #081818 50%, #050a0a 100%);
+}
+.thumb-yak-svg {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, rgba(0,200,150,.1) 0%, transparent 65%);
+}
+
+.game-status {
+  position: absolute; top: 14px; right: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .62rem; font-weight: 500;
+  letter-spacing: .15em; text-transform: uppercase;
+  padding: 4px 12px; border-radius: 20px;
+  z-index: 2;
+}
+.status-soon  { background: rgba(255,202,40,.15); border: 1px solid rgba(255,202,40,.35); color: var(--gold); }
+.status-dev   { background: rgba(0,168,255,.12);  border: 1px solid rgba(0,168,255,.3);   color: var(--blue); }
+.status-later { background: rgba(255,106,0,.1);   border: 1px solid rgba(255,106,0,.25);  color: var(--orange); }
+
+.game-card-body {
+  padding: 28px 28px 32px;
+  position: relative; z-index: 2;
+}
+.game-platform {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .6rem; letter-spacing: .2em;
+  color: var(--muted); text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.game-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.8rem; letter-spacing: .08em;
+  margin-bottom: 10px; color: var(--text);
+  transition: color .3s;
+}
+.game-card:hover .game-title { color: var(--blue); }
+.game-desc {
+  font-size: .85rem; line-height: 1.7;
+  color: var(--muted); margin-bottom: 20px;
+}
+.game-features {
+  list-style: none; display: flex; flex-direction: column; gap: 6px;
+  margin-bottom: 28px;
+}
+.game-features li {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .7rem; color: var(--muted);
+  display: flex; align-items: center; gap: 8px;
+}
+.game-features li::before {
+  content: '→'; color: var(--blue); flex-shrink: 0;
+}
+.game-card:nth-child(2) .game-features li::before { color: var(--red); }
+.game-card:nth-child(3) .game-features li::before { color: #00c896; }
+
+.game-footer-row {
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid var(--border); padding-top: 20px;
+}
+.game-launch {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .65rem; color: var(--muted); letter-spacing: .1em;
+}
+.game-launch strong { color: var(--gold); }
+
+.btn-card {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: .85rem; letter-spacing: .15em;
+  padding: 8px 22px;
+  background: transparent;
+  color: var(--blue);
+  border: 1px solid rgba(0,168,255,.3);
+  border-radius: 3px; cursor: pointer;
+  transition: all .2s; text-decoration: none; display: inline-block;
+}
+.btn-card:hover {
+  background: rgba(0,168,255,.1);
+  border-color: var(--blue);
+  box-shadow: var(--glow-b);
+}
+.game-card:nth-child(2) .btn-card { color: var(--red); border-color: rgba(255,61,87,.3); }
+.game-card:nth-child(2) .btn-card:hover { background: rgba(255,61,87,.1); border-color: var(--red); box-shadow: 0 0 20px rgba(255,61,87,.3); }
+.game-card:nth-child(3) .btn-card { color: #00c896; border-color: rgba(0,200,150,.3); }
+.game-card:nth-child(3) .btn-card:hover { background: rgba(0,200,150,.1); border-color: #00c896; box-shadow: 0 0 20px rgba(0,200,150,.3); }
+
+/* ═══════════════════════════════════════════════
+   WORK / GALLERY
+═══════════════════════════════════════════════ */
+#work {
+  padding: 120px clamp(20px,5vw,60px);
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.work-inner { max-width: 1300px; margin: 0 auto; }
+.work-header { margin-bottom: 56px; }
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 220px);
+  gap: 16px;
+}
+.gallery-item {
+  border-radius: 8px; overflow: hidden;
+  position: relative;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all .4s;
+}
+.gallery-item:first-child  { grid-column: span 2; }
+.gallery-item:nth-child(5) { grid-column: span 2; }
+
+.gallery-bg {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 3rem;
+  transition: transform .5s;
+  position: relative;
+}
+.gallery-item:hover .gallery-bg { transform: scale(1.08); }
+.gallery-item:hover { border-color: rgba(0,168,255,.4); }
+
+.gallery-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(3,5,10,.9) 0%, transparent 60%);
+  display: flex; align-items: flex-end; padding: 20px;
+  opacity: 0; transition: opacity .3s;
+}
+.gallery-item:hover .gallery-overlay { opacity: 1; }
+.gallery-caption {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .7rem; letter-spacing: .1em; color: var(--text);
+}
+.gallery-caption strong { color: var(--blue); display: block; margin-bottom: 2px; font-size: .78rem; }
+
+/* Gallery item backgrounds */
+.gb-1 { background: linear-gradient(135deg,#060f1e,#0d2040); }
+.gb-2 { background: linear-gradient(135deg,#1a0d06,#2d1800); }
+.gb-3 { background: linear-gradient(135deg,#06111a,#0a1e2e); }
+.gb-4 { background: linear-gradient(135deg,#0a0606,#1a0a0a); }
+.gb-5 { background: linear-gradient(135deg,#060a0f,#0d151e); }
+.gb-6 { background: linear-gradient(135deg,#05080a,#0a1010); }
+
+/* ═══════════════════════════════════════════════
+   TIMELINE / ROADMAP
+═══════════════════════════════════════════════ */
+#roadmap {
+  padding: 120px clamp(20px,5vw,60px);
+  max-width: 900px; margin: 0 auto;
+}
+.timeline {
+  position: relative;
+  margin-top: 64px;
+  padding-left: 40px;
+}
+.timeline::before {
+  content: '';
+  position: absolute; left: 7px; top: 0; bottom: 0;
+  width: 1px;
+  background: linear-gradient(to bottom, var(--blue), var(--orange), transparent);
+}
+.tl-item {
+  position: relative; margin-bottom: 48px;
+}
+.tl-item:last-child { margin-bottom: 0; }
+.tl-dot {
+  position: absolute; left: -38px; top: 4px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--blue);
+  border: 2px solid var(--black);
+  box-shadow: 0 0 12px rgba(0,168,255,.5);
+}
+.tl-dot.orange { background: var(--orange); box-shadow: 0 0 12px rgba(255,106,0,.5); }
+.tl-dot.muted  { background: var(--muted);  box-shadow: none; }
+.tl-date {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .65rem; letter-spacing: .2em;
+  color: var(--blue); text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.tl-date.orange { color: var(--orange); }
+.tl-date.muted  { color: var(--muted); }
+.tl-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem; letter-spacing: .08em;
+  margin-bottom: 6px;
+}
+.tl-desc {
+  font-size: .87rem; color: var(--muted); line-height: 1.7;
+}
+
+/* ═══════════════════════════════════════════════
+   CONTACT
+═══════════════════════════════════════════════ */
+#contact {
+  padding: 120px clamp(20px,5vw,60px);
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+}
+.contact-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 80px; align-items: start;
+}
+.contact-left .section-desc { margin-bottom: 40px; }
+
+.contact-links { display: flex; flex-direction: column; gap: 16px; }
+.contact-link {
+  display: flex; align-items: center; gap: 16px;
+  padding: 18px 22px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all .3s;
+  color: var(--text);
+}
+.contact-link:hover {
+  border-color: rgba(0,168,255,.35);
+  background: rgba(0,168,255,.05);
+  transform: translateX(6px);
+  box-shadow: var(--glow-b);
+}
+.cl-icon {
+  width: 40px; height: 40px;
+  background: rgba(0,168,255,.1);
+  border: 1px solid rgba(0,168,255,.2);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; flex-shrink: 0;
+}
+.cl-info { flex: 1; }
+.cl-platform {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .62rem; letter-spacing: .15em;
+  color: var(--muted); text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.cl-value { font-size: .9rem; font-weight: 600; }
+.cl-arrow {
+  font-size: 1rem; color: var(--muted);
+  transition: color .3s, transform .3s;
+}
+.contact-link:hover .cl-arrow { color: var(--blue); transform: translateX(4px); }
+
+/* Contact form */
+.contact-form {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 40px;
+  backdrop-filter: blur(12px);
+  position: relative; overflow: hidden;
+}
+.contact-form::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--orange), var(--blue), transparent);
+}
+.form-row { margin-bottom: 20px; }
+.form-row label {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .65rem; letter-spacing: .15em;
+  color: var(--muted); text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.form-row input, .form-row textarea, .form-row select {
+  width: 100%; padding: 13px 16px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 5px;
+  color: var(--text);
+  font-family: 'Syne', sans-serif; font-size: .9rem;
+  transition: border-color .2s, box-shadow .2s;
+  resize: none; outline: none;
+  -webkit-appearance: none;
+}
+.form-row input:focus, .form-row textarea:focus, .form-row select:focus {
+  border-color: rgba(0,168,255,.4);
+  box-shadow: 0 0 0 3px rgba(0,168,255,.08);
+}
+.form-row textarea { height: 130px; }
+.form-row select option { background: var(--panel); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.btn-submit {
+  width: 100%; padding: 16px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem; letter-spacing: .2em;
+  background: var(--orange);
+  color: white; border: none; border-radius: 4px; cursor: pointer;
+  transition: all .2s;
+  box-shadow: 0 0 30px rgba(255,106,0,.25);
+  position: relative; overflow: hidden;
+}
+.btn-submit:hover { transform: translateY(-2px); box-shadow: 0 0 50px rgba(255,106,0,.45); }
+
+/* ═══════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════ */
+footer {
+  padding: 60px clamp(20px,5vw,72px) 32px;
+  border-top: 1px solid var(--border);
+}
+.footer-inner {
+  max-width: 1300px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 24px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 28px;
+}
+.footer-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem; letter-spacing: .18em; color: var(--text);
+  display: flex; align-items: center; gap: 10px;
+}
+.footer-logo-mark {
+  width: 28px; height: 28px; background: var(--blue);
+  border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 14px;
+  box-shadow: 0 0 16px rgba(0,168,255,.35);
+}
+.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
+.footer-links a {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .65rem; letter-spacing: .15em;
+  color: var(--muted); text-decoration: none; text-transform: uppercase;
+  transition: color .2s;
+}
+.footer-links a:hover { color: var(--blue); }
+.footer-copy {
+  max-width: 1300px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 12px;
+}
+.footer-copy p {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .62rem; color: var(--muted); letter-spacing: .1em;
+}
+.footer-copy span { color: var(--blue); }
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .games-grid { grid-template-columns: 1fr 1fr; }
+  #about { grid-template-columns: 1fr; gap: 48px; padding: 80px clamp(20px,5vw,60px); }
+  .gallery-grid { grid-template-rows: repeat(3, 180px); }
+}
+@media (max-width: 768px) {
+  .games-grid { grid-template-columns: 1fr; }
+  .gallery-grid { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 160px); }
+  .gallery-item:first-child, .gallery-item:nth-child(5) { grid-column: span 1; }
+  .stats-inner { grid-template-columns: repeat(2,1fr); }
+  .stat-item:nth-child(2) { border-right: none; }
+  .contact-inner { grid-template-columns: 1fr; gap: 48px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .nav-links, .nav-cta { display: none; }
+  .hamburger { display: flex; }
+  .footer-inner { flex-direction: column; align-items: flex-start; gap: 20px; }
+  #roadmap { padding: 80px clamp(20px,5vw,40px); }
+}
+@media (max-width: 480px) {
+  .gallery-grid { grid-template-columns: 1fr; grid-template-rows: auto; }
+  .gallery-item { height: 150px; }
+  .stats-inner { grid-template-columns: 1fr 1fr; }
+  .hero-buttons { flex-direction: column; align-items: center; }
+}
+
+/* ═══════════════════════════════════════════════
+   MISC
+═══════════════════════════════════════════════ */
+.accent-blue { color: var(--blue); }
+.accent-orange { color: var(--orange); }
+::selection { background: rgba(0,168,255,.25); color: var(--text); }
+
+/* Progress bar on top */
+#progress-bar {
+  position: fixed; top: 0; left: 0;
+  height: 2px; background: linear-gradient(90deg, var(--blue), var(--cyan));
+  z-index: 501; width: 0%;
+  transition: width .1s;
+  box-shadow: 0 0 8px rgba(0,168,255,.5);
+}
+
+/* Back to top */
+#back-top {
+  position: fixed; bottom: 32px; right: 32px;
+  width: 44px; height: 44px;
+  background: rgba(0,168,255,.15);
+  border: 1px solid rgba(0,168,255,.3);
+  border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; color: var(--blue);
+  opacity: 0; transform: translateY(10px);
+  transition: all .3s; z-index: 400;
+}
+#back-top.visible { opacity: 1; transform: translateY(0); }
+#back-top:hover { background: rgba(0,168,255,.25); box-shadow: var(--glow-b); }
+</style>
 </head>
 <body>
-  <header>
-    <section class="container text-center my-4">
-  <h2>Welcome to Trideva Interactive!</h2>
-  <p class="lead">
-    We’re an indie game studio from Kerala building original games with real-life influence, passion, and powerful stories.<br>
-    Check out our upcoming titles and follow our journey!
-  </p>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-logo">TRIDEVA<span>.</span></div>
+  <div class="loader-bar-wrap"><div class="loader-bar"></div></div>
+  <div class="loader-pct" id="loader-pct">LOADING... 0%</div>
+</div>
+
+<!-- CURSOR -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- PROGRESS BAR -->
+<div id="progress-bar"></div>
+
+<!-- BACK TO TOP -->
+<div id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</div>
+
+<!-- ── NAVBAR ── -->
+<nav id="navbar">
+  <a href="#hero" class="nav-logo">
+    <div class="nav-logo-mark">🎮</div>
+    TRIDEVA
+  </a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#games">Games</a></li>
+    <li><a href="#work">Work</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <a href="#contact" class="nav-cta">Get In Touch</a>
+  <div class="hamburger" id="hamburger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#about" onclick="toggleMenu()">About</a>
+  <a href="#games" onclick="toggleMenu()">Games</a>
+  <a href="#work" onclick="toggleMenu()">Work</a>
+  <a href="#roadmap" onclick="toggleMenu()">Roadmap</a>
+  <a href="#contact" onclick="toggleMenu()">Contact</a>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     HERO
+═══════════════════════════════════════════════ -->
+<section id="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-grid"></div>
+  <div class="hero-glow-center"></div>
+  <div class="hero-glow-orange"></div>
+  <div class="scanlines"></div>
+
+  <div class="hero-eyebrow">
+    <span class="eyebrow-dot"></span>
+    Indie Game Studio · Kerala, India
+  </div>
+
+  <h1 class="hero-title">
+    <span class="t-outline">TRIDEVA</span><br>
+    <span class="t-blue">INTERACTIVE</span>
+  </h1>
+
+  <div class="hero-sub">Building Realistic &amp; Immersive Games</div>
+
+  <div class="typewriter-wrap">
+    <span id="typewriter"></span>
+  </div>
+
+  <div class="hero-buttons">
+    <a href="#games" class="btn-primary">Explore Games</a>
+    <a href="#about" class="btn-ghost">Our Story</a>
+  </div>
+
+  <div class="scroll-indicator">
+    <div class="scroll-mouse"><div class="scroll-mouse-dot"></div></div>
+    <span>Scroll</span>
+  </div>
 </section>
 
-    <img src="1752051798430.png" alt="Trideva Logo" width="300">
-    <h1>Trideva Interactive</h1>
-    <p>We craft high-quality, indie games from the heart of Kerala</p>
-  </header>
-
-  <section id="games" class="container">
-    <h2 class="text-center">Our Games</h2>
-    <div class="row">
-      <div class="col-md-4 game-card text-center">
-         <img src="Copilot_20250709_120414.png" alt="Trideva Logo" width="300">
-        <h4>TVM Bus Simulator</h4>
-        <p>Experience the true Thiruvananthapuram roads, Real bus physics, wedding route missions, and local sounds. A highly realistic driving sim for PC & Mobile.</p>
-        <span class="badge bg-warning text-dark">Launch: 12 MAY 2026</span><br>
-        <a class="btn btn-secondary btn-download disabled" href="#">Coming Soon</a>
-        <h2>Demo Progress</h2>
-        <p>This is a screenshot of the current development build :</p>
-        <img src="Screenshot 2025-07-31 183928.png" alt="TVM Bus Simulator Screenshot" style="width:100%; max-width:600px; border-radius:10px; box-shadow:0 0 10px #ccc;">
-        <img src="Screenshot 2025-07-31 184004.png" alt="TVM Bus Simulator Screenshot" style="width:100%; max-width:600px; border-radius:10px; box-shadow:0 0 10px #ccc;">
-        <img src="Screenshot 2025-07-31 184226.png" alt="TVM Bus Simulator Screenshot" style="width:100%; max-width:600px; border-radius:10px; box-shadow:0 0 10px #ccc;">
-        <img src="Screenshot 2025-07-31 184622.png" alt="TVM Bus Simulator Screenshot" style="width:100%; max-width:600px; border-radius:10px; box-shadow:0 0 10px #ccc;">
-        <img src="Screenshot 2025-07-31 184840.png" alt="TVM Bus Simulator Screenshot" style="width:100%; max-width:600px; border-radius:10px; box-shadow:0 0 10px #ccc;">
-        <figcaption style="font-size:14px; color:#666;">TVM Bus Simulator – Work in Progress (July 2025)</figcaption>
-      </div>
-      <div class="col-md-4 game-card text-center">
-        <img src="Copilot_20250709_121423.png" alt="Trideva Logo" width="300">
-        <h4>Oye Chor</h4>
-        <p>An endless runner where you play as a thief chased by police through Indian streets. Punjabi voiceovers, cool powers, and thrilling gameplay.</p>
-        <span class="badge bg-warning text-dark">Launch: After TVM Bus Sim</span><br>
-        <a class="btn btn-secondary btn-download disabled" href="#">Coming Soon</a>
-      </div>
-      <div class="col-md-4 game-card text-center">
-        <img src="ChatGPT Image Jul 9, 2025, 03_48_49 PM.png" alt="Trideva Logo" width="300">
-        <h4>Yakshiyugam</h4>
-        <p>A spine-chilling horror adventure set in rural Kerala, blending folklore and supernatural mystery. Free on mobile, paid on PC.</p>
-        <span class="badge bg-warning text-dark">Launch: After Oye Chor</span><br>
-        <a class="btn btn-secondary btn-download disabled" href="#">Coming Soon</a>
-      </div>
+<!-- ═══════════════════════════════════════════════
+     STATS
+═══════════════════════════════════════════════ -->
+<div id="stats">
+  <div class="stats-inner">
+    <div class="stat-item reveal">
+      <div class="stat-num" data-count="3">0</div>
+      <div class="stat-label">Games in Dev</div>
     </div>
-  </section>
+    <div class="stat-item reveal" style="transition-delay:.1s">
+      <div class="stat-num" data-count="1">0</div>
+      <div class="stat-label">Solo Developer</div>
+    </div>
+    <div class="stat-item reveal" style="transition-delay:.2s">
+      <div class="stat-num" data-count="2026">0</div>
+      <div class="stat-label">First Launch Year</div>
+    </div>
+    <div class="stat-item reveal" style="transition-delay:.3s">
+      <div class="stat-num" data-count="100">0</div>
+      <div class="stat-label">% Passion</div>
+    </div>
+  </div>
+</div>
 
-  <section id="about" class="bg-light">
-    <div class="container">
-      <h2 class="text-center">About Trideva Interactive</h2>
-      <p class="text-center">
-        Trideva Interactive is an indie game studio based in Kerala, India, led by a passionate BCA student and solo developer. We focus on building games inspired by Indian culture, local environments, and authentic experiences. Our games are designed for both fun and realism — blending native sounds, real-world routes, and original stories.
+<!-- ═══════════════════════════════════════════════
+     ABOUT
+═══════════════════════════════════════════════ -->
+<section>
+  <div id="about">
+    <div class="about-left reveal-left">
+      <div class="section-eyebrow">About Us</div>
+      <h2 class="section-title">Crafted From the<br><span class="accent-blue">Heart of Kerala</span></h2>
+      <p class="section-desc">
+        Trideva Interactive is an indie game studio led by a solo BCA student developer,
+        building games rooted in Indian culture, real-world environments, and authentic storytelling.
+        From Kerala's bustling city roads to its spine-chilling folklore — we craft experiences that resonate.
       </p>
+      <div class="about-badges">
+        <span class="badge">Unreal Engine 4</span>
+        <span class="badge">Blender</span>
+        <span class="badge orange">Mobile First</span>
+        <span class="badge orange">PC Gaming</span>
+        <span class="badge">Game Design</span>
+        <span class="badge">Storytelling</span>
+      </div>
     </div>
-  </section>
+    <div class="about-right reveal-right">
+      <div class="skill-row">
+        <div class="skill-info">
+          <span class="skill-name">Unreal Engine 4</span>
+          <span class="skill-pct">88%</span>
+        </div>
+        <div class="skill-track"><div class="skill-fill" data-width="88"></div></div>
+      </div>
+      <div class="skill-row">
+        <div class="skill-info">
+          <span class="skill-name">Blender 3D</span>
+          <span class="skill-pct">82%</span>
+        </div>
+        <div class="skill-track"><div class="skill-fill orange" data-width="82"></div></div>
+      </div>
+      <div class="skill-row">
+        <div class="skill-info">
+          <span class="skill-name">Game Design</span>
+          <span class="skill-pct">90%</span>
+        </div>
+        <div class="skill-track"><div class="skill-fill cyan" data-width="90"></div></div>
+      </div>
+      <div class="skill-row">
+        <div class="skill-info">
+          <span class="skill-name">Mobile Optimization</span>
+          <span class="skill-pct">75%</span>
+        </div>
+        <div class="skill-track"><div class="skill-fill gold" data-width="75"></div></div>
+      </div>
+      <div class="skill-row">
+        <div class="skill-info">
+          <span class="skill-name">World Building</span>
+          <span class="skill-pct">85%</span>
+        </div>
+        <div class="skill-track"><div class="skill-fill" data-width="85"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
 
-  <section id="contact" class="container">
-    <h2 class="text-center">Contact Us</h2>
-    <p class="text-center">
-      📧 Email: <a href="mailto:malayaleegamer07@gmail.com">malayaleegamer07@gmail.com</a><br />
-      📷 Instagram: <a href="https://www.instagram.com/kalki_chunk/">@kalki_chunks</a><br />
-      🎮 YouTube: <a href="http://www.youtube.com/@malayalamgamer07">Trideva Interactive</a>
-    </p>
-  </section>
+<!-- ═══════════════════════════════════════════════
+     GAMES
+═══════════════════════════════════════════════ -->
+<section id="games" style="padding:120px clamp(20px,5vw,60px);max-width:1300px;margin:0 auto;">
+  <div class="games-header">
+    <div>
+      <div class="section-eyebrow">Our Games</div>
+      <h2 class="section-title">Titles in Development</h2>
+    </div>
+    <p class="section-desc" style="max-width:360px;">Three original games rooted in Indian culture — a simulator, a runner, and a horror adventure.</p>
+  </div>
 
-  <footer>
-    <p>&copy; 2025 Trideva Interactive. All rights reserved.</p>
-  </footer>
+  <div class="games-grid">
+
+    <!-- GAME 1: TVM Bus Simulator -->
+    <div class="game-card reveal" style="transition-delay:0s">
+      <div class="game-thumb">
+        <div class="game-thumb-bg thumb-tvm">
+          <div class="thumb-tvm-svg"></div>
+          <span style="position:relative;z-index:1;font-size:4.5rem;filter:drop-shadow(0 0 20px rgba(0,168,255,.5))">🚌</span>
+        </div>
+        <div class="game-status status-soon">May 2026</div>
+      </div>
+      <div class="game-card-body">
+        <div class="game-platform">PC · Android · iOS</div>
+        <div class="game-title">TVM Bus Simulator</div>
+        <p class="game-desc">Experience Thiruvananthapuram's roads with unparalleled realism. Drive authentic Kerala bus routes with real physics, passengers, and urban environment.</p>
+        <ul class="game-features">
+          <li>Real-world routes — Vizhinjam to East Fort</li>
+          <li>NPC passengers &amp; conductor system</li>
+          <li>Dynamic weather &amp; day-night cycle</li>
+          <li>Authentic Kerala sound design</li>
+        </ul>
+        <div class="game-footer-row">
+          <div class="game-launch">Launch: <strong>12 MAY 2026</strong></div>
+          <a href="mailto:malayaleegamer07@gmail.com" class="btn-card">View Details</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME 2: Oye Chor -->
+    <div class="game-card reveal" style="transition-delay:.12s">
+      <div class="game-thumb">
+        <div class="game-thumb-bg thumb-chor">
+          <div class="thumb-chor-svg"></div>
+          <span style="position:relative;z-index:1;font-size:4.5rem;filter:drop-shadow(0 0 20px rgba(255,61,87,.5))">🏃</span>
+        </div>
+        <div class="game-status status-later">Coming Soon</div>
+      </div>
+      <div class="game-card-body">
+        <div class="game-platform">PC · Android</div>
+        <div class="game-title">Oye Chor</div>
+        <p class="game-desc">Endless runner through Indian streets — you're the thief, the police are on your tail. Punjabi voiceovers, power-ups, and relentless pace.</p>
+        <ul class="game-features">
+          <li>Fast-paced police chase gameplay</li>
+          <li>Punjabi voice acting &amp; soundtrack</li>
+          <li>Increasing difficulty &amp; leaderboards</li>
+          <li>Unique power-up abilities</li>
+        </ul>
+        <div class="game-footer-row">
+          <div class="game-launch">Launch: <strong>After TVM Sim</strong></div>
+          <a href="mailto:malayaleegamer07@gmail.com" class="btn-card">View Details</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME 3: Yakshiyugam -->
+    <div class="game-card reveal" style="transition-delay:.24s">
+      <div class="game-thumb">
+        <div class="game-thumb-bg thumb-yak">
+          <div class="thumb-yak-svg"></div>
+          <span style="position:relative;z-index:1;font-size:4.5rem;filter:drop-shadow(0 0 20px rgba(0,200,150,.5))">👁️</span>
+        </div>
+        <div class="game-status status-later">Coming Soon</div>
+      </div>
+      <div class="game-card-body">
+        <div class="game-platform">PC · Mobile (Free)</div>
+        <div class="game-title">Yakshiyugam</div>
+        <p class="game-desc">A spine-chilling horror adventure deep in rural Kerala folklore. Supernatural mystery, ancient demons, and a story that will haunt you long after credits roll.</p>
+        <ul class="game-features">
+          <li>Story-driven Kerala folklore horror</li>
+          <li>Atmospheric dark environments</li>
+          <li>Free mobile, paid PC release</li>
+          <li>Original Malayalam voice acting</li>
+        </ul>
+        <div class="game-footer-row">
+          <div class="game-launch">Launch: <strong>TBA 2026</strong></div>
+          <a href="mailto:malayaleegamer07@gmail.com" class="btn-card">View Details</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     WORK / GALLERY
+═══════════════════════════════════════════════ -->
+<section id="work">
+  <div class="work-inner">
+    <div class="work-header reveal">
+      <div class="section-eyebrow">Portfolio</div>
+      <h2 class="section-title">Development Work</h2>
+      <p class="section-desc">3D assets, environment design, and engine screenshots from active development.</p>
+    </div>
+    <div class="gallery-grid">
+      <div class="gallery-item reveal" style="transition-delay:.05s">
+        <div class="gallery-bg gb-1">
+          <span style="filter:drop-shadow(0 0 16px rgba(0,168,255,.6))">🚌</span>
+        </div>
+        <div class="gallery-overlay">
+          <div class="gallery-caption">
+            <strong>TVM Bus — 3D Model</strong>
+            Blender · High-poly bus asset
+          </div>
+        </div>
+      </div>
+      <div class="gallery-item reveal" style="transition-delay:.1s">
+        <div class="gallery-bg gb-2">
+          <span style="filter:drop-shadow(0 0 16px rgba(255,106,0,.5))">🏙️</span>
+        </div>
+        <div class="gallery-overlay">
+          <div class="gallery-caption">
+            <strong>East Fort Environment</strong>
+            UE4 · Kerala city block
+          </div>
+        </div>
+      </div>
+      <div class="gallery-item reveal" style="transition-delay:.15s">
+        <div class="gallery-bg gb-3">
+          <span style="filter:drop-shadow(0 0 16px rgba(0,229,255,.5))">🛣️</span>
+        </div>
+        <div class="gallery-overlay">
+          <div class="gallery-caption">
+            <strong>Road System — UE4</strong>
+            Procedural road &amp; traffic layout
+          </div>
+        </div>
+      </div>
+      <div class="gallery-item reveal" style="transition-delay:.2s">
+        <div class="gallery-bg gb-4">
+          <span style="filter:drop-shadow(0 0 16px rgba(255,61,87,.5))">🌙</span>
+        </div>
+        <div class="gallery-overlay">
+          <div class="gallery-caption">
+            <strong>Night Lighting Pass</strong>
+            UE4 · Volumetric fog &amp; neon
+          </div>
+        </div>
+      </div>
+      <div class="gallery-item reveal" style="transition-delay:.25s">
+        <div class="gallery-bg gb-5">
+          <span style="filter:drop-shadow(0 0 16px rgba(255,202,40,.5))">⛩️</span>
+        </div>
+        <div class="gallery-overlay">
+          <div class="gallery-caption">
+            <strong>Yakshiyugam — Temple</strong>
+            UE4 · Horror environment props
+          </div>
+        </div>
+      </div>
+      <div class="gallery-item reveal" style="transition-delay:.3s">
+        <div class="gallery-bg gb-6">
+          <span style="filter:drop-shadow(0 0 16px rgba(0,200,150,.5))">🌴</span>
+        </div>
+        <div class="gallery-overlay">
+          <div class="gallery-caption">
+            <strong>Kerala Foliage Pack</strong>
+            Blender · Tropical tree assets
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     ROADMAP
+═══════════════════════════════════════════════ -->
+<section id="roadmap">
+  <div class="section-eyebrow reveal">Roadmap</div>
+  <h2 class="section-title reveal">Development Timeline</h2>
+  <p class="section-desc reveal">From concept to launch — the full journey ahead.</p>
+
+  <div class="timeline">
+    <div class="tl-item reveal">
+      <div class="tl-dot"></div>
+      <div class="tl-date">2024 – 2025 · Completed</div>
+      <div class="tl-title">Concept &amp; Prototyping</div>
+      <p class="tl-desc">World design, bus physics prototype, and early route mapping for TVM Bus Simulator. Core gameplay loops established.</p>
+    </div>
+    <div class="tl-item reveal" style="transition-delay:.1s">
+      <div class="tl-dot"></div>
+      <div class="tl-date">Q1–Q2 2026 · In Progress</div>
+      <div class="tl-title">TVM Bus Simulator — Beta</div>
+      <p class="tl-desc">Full route implementation, NPC passenger system, weather engine, and polishing for May 2026 launch on PC &amp; Mobile.</p>
+    </div>
+    <div class="tl-item reveal" style="transition-delay:.2s">
+      <div class="tl-dot orange"></div>
+      <div class="tl-date orange">12 MAY 2026 · Launch</div>
+      <div class="tl-title" style="color:var(--orange)">TVM Bus Simulator — Launch 🚀</div>
+      <p class="tl-desc">Official release on PC &amp; Mobile platforms. Vizhinjam to East Fort route live with full NPC, weather &amp; conductor systems.</p>
+    </div>
+    <div class="tl-item reveal" style="transition-delay:.3s">
+      <div class="tl-dot muted"></div>
+      <div class="tl-date muted">Late 2026</div>
+      <div class="tl-title" style="color:var(--muted)">Oye Chor</div>
+      <p class="tl-desc">Development begins post-TVM launch. Endless runner with Punjabi culture, police chase mechanics, and online leaderboards.</p>
+    </div>
+    <div class="tl-item reveal" style="transition-delay:.4s">
+      <div class="tl-dot muted"></div>
+      <div class="tl-date muted">2027</div>
+      <div class="tl-title" style="color:var(--muted)">Yakshiyugam</div>
+      <p class="tl-desc">Horror adventure enters full production. Kerala folklore, atmospheric storytelling, and original voice acting in Malayalam.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     CONTACT
+═══════════════════════════════════════════════ -->
+<section id="contact">
+  <div class="contact-inner">
+    <div class="contact-left reveal-left">
+      <div class="section-eyebrow">Contact</div>
+      <h2 class="section-title">Let's Build<br><span class="accent-orange">Something Great</span></h2>
+      <p class="section-desc">Have a collab idea, feedback, or just want to say hi? We're always open to conversations with fellow creators and players.</p>
+
+      <div class="contact-links" style="margin-top:40px">
+        <a href="mailto:malayaleegamer07@gmail.com" class="contact-link">
+          <div class="cl-icon">📧</div>
+          <div class="cl-info">
+            <div class="cl-platform">Email</div>
+            <div class="cl-value">malayaleegamer07@gmail.com</div>
+          </div>
+          <div class="cl-arrow">→</div>
+        </a>
+        <a href="https://www.instagram.com/kalki_chunk/" target="_blank" class="contact-link">
+          <div class="cl-icon" style="background:rgba(255,106,0,.1);border-color:rgba(255,106,0,.2)">📷</div>
+          <div class="cl-info">
+            <div class="cl-platform">Instagram</div>
+            <div class="cl-value">@kalki_chunks</div>
+          </div>
+          <div class="cl-arrow">→</div>
+        </a>
+        <a href="http://www.youtube.com/@malayalamgamer07" target="_blank" class="contact-link">
+          <div class="cl-icon" style="background:rgba(255,61,57,.08);border-color:rgba(255,61,57,.2)">▶️</div>
+          <div class="cl-info">
+            <div class="cl-platform">YouTube</div>
+            <div class="cl-value">Trideva Interactive</div>
+          </div>
+          <div class="cl-arrow">→</div>
+        </a>
+        <a href="#" class="contact-link">
+          <div class="cl-icon" style="background:rgba(88,101,242,.1);border-color:rgba(88,101,242,.2)">💬</div>
+          <div class="cl-info">
+            <div class="cl-platform">Discord</div>
+            <div class="cl-value">Join Community Server</div>
+          </div>
+          <div class="cl-arrow">→</div>
+        </a>
+      </div>
+    </div>
+
+    <div class="contact-form reveal-right">
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Your Name</label>
+          <input type="text" placeholder="Enter your name" />
+        </div>
+        <div class="form-row">
+          <label>Email Address</label>
+          <input type="email" placeholder="your@email.com" />
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Subject</label>
+        <select>
+          <option value="">Select a topic…</option>
+          <option>Game Feedback</option>
+          <option>Collaboration</option>
+          <option>Press / Media</option>
+          <option>Bug Report</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Message</label>
+        <textarea placeholder="Tell us what's on your mind…"></textarea>
+      </div>
+      <button class="btn-submit" onclick="submitForm(this)">Send Message →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════════ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">
+      <div class="footer-logo-mark">🎮</div>
+      TRIDEVA INTERACTIVE
+    </div>
+    <div class="footer-links">
+      <a href="#about">About</a>
+      <a href="#games">Games</a>
+      <a href="#work">Work</a>
+      <a href="#roadmap">Roadmap</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </div>
+  <div class="footer-copy">
+    <p>© 2026 <span>Trideva Interactive</span>. All rights reserved. Made with ❤️ in Kerala, India.</p>
+    <p>Built with <span>HTML · CSS · JS</span></p>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════ -->
+<script>
+// ══════════════════════════════════════════════
+//  LOADER
+// ══════════════════════════════════════════════
+let loadPct = 0;
+const loaderPct = document.getElementById('loader-pct');
+const loaderInterval = setInterval(() => {
+  loadPct += Math.random() * 18 + 4;
+  if (loadPct >= 100) {
+    loadPct = 100;
+    clearInterval(loaderInterval);
+    setTimeout(() => {
+      document.getElementById('loader').classList.add('gone');
+      document.body.style.cursor = 'none';
+    }, 400);
+  }
+  loaderPct.textContent = `LOADING... ${Math.floor(loadPct)}%`;
+}, 80);
+
+// ══════════════════════════════════════════════
+//  CUSTOM CURSOR
+// ══════════════════════════════════════════════
+const cursor     = document.getElementById('cursor');
+const cursorRing = document.getElementById('cursor-ring');
+let mx = 0, my = 0, rx = 0, ry = 0;
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx + 'px';
+  cursor.style.top  = my + 'px';
+});
+function animRing() {
+  rx += (mx - rx) * 0.14;
+  ry += (my - ry) * 0.14;
+  cursorRing.style.left = rx + 'px';
+  cursorRing.style.top  = ry + 'px';
+  requestAnimationFrame(animRing);
+}
+animRing();
+
+document.querySelectorAll('a, button, .game-card, .gallery-item').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    cursor.style.transform = 'translate(-50%,-50%) scale(2)';
+    cursor.style.background = 'var(--orange)';
+    cursorRing.style.width  = '56px';
+    cursorRing.style.height = '56px';
+    cursorRing.style.borderColor = 'rgba(255,106,0,.4)';
+  });
+  el.addEventListener('mouseleave', () => {
+    cursor.style.transform = 'translate(-50%,-50%) scale(1)';
+    cursor.style.background = 'var(--blue)';
+    cursorRing.style.width  = '36px';
+    cursorRing.style.height = '36px';
+    cursorRing.style.borderColor = 'rgba(0,168,255,.55)';
+  });
+});
+
+// ══════════════════════════════════════════════
+//  HERO CANVAS PARTICLES
+// ══════════════════════════════════════════════
+const c = document.getElementById('hero-canvas');
+const ctx = c.getContext('2d');
+let W, H, particles = [];
+
+function resizeCanvas() {
+  W = c.width  = c.offsetWidth;
+  H = c.height = c.offsetHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', () => { resizeCanvas(); initParticles(); });
+
+class Particle {
+  constructor() { this.reset(); }
+  reset() {
+    this.x  = Math.random() * W;
+    this.y  = Math.random() * H;
+    this.vx = (Math.random() - .5) * .4;
+    this.vy = (Math.random() - .5) * .4 - .1;
+    this.r  = Math.random() * 1.5 + .3;
+    this.life = Math.random();
+    this.maxLife = Math.random() * 200 + 100;
+    this.type = Math.random() < .7 ? 'dot' : 'line';
+    this.col = Math.random() < .6 ? '0,168,255' : '255,106,0';
+  }
+  update() {
+    this.x += this.vx; this.y += this.vy; this.life++;
+    if (this.life > this.maxLife || this.x < 0 || this.x > W || this.y < 0 || this.y > H) this.reset();
+  }
+  draw() {
+    const a = Math.sin((this.life / this.maxLife) * Math.PI) * .6;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${this.col},${a})`;
+    ctx.fill();
+  }
+}
+
+function initParticles() {
+  particles = [];
+  const n = Math.min(120, Math.floor((W * H) / 8000));
+  for (let i = 0; i < n; i++) particles.push(new Particle());
+}
+initParticles();
+
+// Connection lines
+function drawConnections() {
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const d  = Math.sqrt(dx*dx + dy*dy);
+      if (d < 90) {
+        const a = (1 - d/90) * 0.12;
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.strokeStyle = `rgba(0,168,255,${a})`;
+        ctx.lineWidth = .5;
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+function heroLoop() {
+  ctx.clearRect(0, 0, W, H);
+  drawConnections();
+  particles.forEach(p => { p.update(); p.draw(); });
+  requestAnimationFrame(heroLoop);
+}
+heroLoop();
+
+// ══════════════════════════════════════════════
+//  TYPEWRITER
+// ══════════════════════════════════════════════
+const phrases = [
+  'Realistic simulation games for everyone.',
+  'Inspired by Kerala — designed for the world.',
+  'From Thiruvananthapuram roads to your screen.',
+  'Solo developer. Infinite ambition.',
+  'Three games. One dream. Pure passion.',
+];
+let pi = 0, ci = 0, deleting = false;
+const tw = document.getElementById('typewriter');
+
+function typeLoop() {
+  const phrase = phrases[pi];
+  if (!deleting) {
+    tw.textContent = phrase.slice(0, ++ci);
+    if (ci === phrase.length) { deleting = true; setTimeout(typeLoop, 1800); return; }
+    setTimeout(typeLoop, 52);
+  } else {
+    tw.textContent = phrase.slice(0, --ci);
+    if (ci === 0) { deleting = false; pi = (pi + 1) % phrases.length; setTimeout(typeLoop, 400); return; }
+    setTimeout(typeLoop, 28);
+  }
+}
+setTimeout(typeLoop, 2400);
+
+// ══════════════════════════════════════════════
+//  SCROLL EVENTS
+// ══════════════════════════════════════════════
+const navbar     = document.getElementById('navbar');
+const progressBar = document.getElementById('progress-bar');
+const backTop    = document.getElementById('back-top');
+
+window.addEventListener('scroll', () => {
+  const st = window.scrollY;
+  const th = document.body.scrollHeight - window.innerHeight;
+
+  // Navbar
+  navbar.classList.toggle('scrolled', st > 50);
+
+  // Progress bar
+  progressBar.style.width = (st / th * 100) + '%';
+
+  // Back to top
+  backTop.classList.toggle('visible', st > 400);
+
+  // Reveal elements
+  document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(el => {
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight - 80) el.classList.add('visible');
+  });
+
+  // Skill bars
+  document.querySelectorAll('.skill-fill').forEach(el => {
+    const rect = el.closest('.about-right')?.getBoundingClientRect();
+    if (rect && rect.top < window.innerHeight - 60) {
+      el.style.width = el.dataset.width + '%';
+    }
+  });
+
+  // Count-up stats
+  document.querySelectorAll('.stat-num[data-count]').forEach(el => {
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight - 40 && !el.dataset.done) {
+      el.dataset.done = '1';
+      countUp(el, parseInt(el.dataset.count));
+    }
+  });
+});
+
+function countUp(el, target) {
+  const dur = 1200;
+  const start = Date.now();
+  function tick() {
+    const t = Math.min((Date.now() - start) / dur, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.floor(ease * target);
+    if (t < 1) requestAnimationFrame(tick);
+    else el.textContent = target;
+  }
+  tick();
+}
+
+// Trigger on load
+setTimeout(() => window.dispatchEvent(new Event('scroll')), 200);
+
+// ══════════════════════════════════════════════
+//  MOBILE MENU
+// ══════════════════════════════════════════════
+function toggleMenu() {
+  const menu = document.getElementById('mobileMenu');
+  const ham  = document.getElementById('hamburger');
+  menu.classList.toggle('open');
+  const spans = ham.querySelectorAll('span');
+  if (menu.classList.contains('open')) {
+    spans[0].style.transform = 'rotate(45deg) translate(5px,5px)';
+    spans[1].style.opacity = '0';
+    spans[2].style.transform = 'rotate(-45deg) translate(5px,-5px)';
+  } else {
+    spans[0].style.transform = '';
+    spans[1].style.opacity = '1';
+    spans[2].style.transform = '';
+  }
+}
+
+// ══════════════════════════════════════════════
+//  CONTACT FORM
+// ══════════════════════════════════════════════
+function submitForm(btn) {
+  btn.textContent = 'Sending…';
+  btn.style.opacity = '.7';
+  setTimeout(() => {
+    btn.textContent = '✓ Message Sent!';
+    btn.style.background = '#00c896';
+    btn.style.opacity = '1';
+    setTimeout(() => {
+      btn.textContent = 'Send Message →';
+      btn.style.background = '';
+    }, 3000);
+  }, 1200);
+}
+
+// ══════════════════════════════════════════════
+//  PARALLAX HERO GLOW
+// ══════════════════════════════════════════════
+const heroGlow = document.querySelector('.hero-glow-center');
+const heroOrange = document.querySelector('.hero-glow-orange');
+document.addEventListener('mousemove', e => {
+  const xp = (e.clientX / window.innerWidth  - .5) * 30;
+  const yp = (e.clientY / window.innerHeight - .5) * 30;
+  heroGlow.style.transform   = `translate(calc(-50% + ${xp}px), calc(-50% + ${yp}px))`;
+  heroOrange.style.transform = `translate(calc(-50% + ${-xp*.5}px), calc(-50% + ${-yp*.5}px))`;
+});
+
+// ══════════════════════════════════════════════
+//  GALLERY RIPPLE
+// ══════════════════════════════════════════════
+document.querySelectorAll('.gallery-item').forEach(item => {
+  item.addEventListener('click', function(e) {
+    const ripple = document.createElement('div');
+    const rect = this.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height) * 2;
+    ripple.style.cssText = `
+      position:absolute;
+      width:${size}px;height:${size}px;
+      left:${e.clientX-rect.left-size/2}px;
+      top:${e.clientY-rect.top-size/2}px;
+      background:rgba(0,168,255,.2);
+      border-radius:50%;
+      transform:scale(0);
+      animation:rippleAnim .6s ease forwards;
+      pointer-events:none;
+      z-index:10;
+    `;
+    this.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 650);
+  });
+});
+
+// Ripple keyframe
+const rippleStyle = document.createElement('style');
+rippleStyle.textContent = '@keyframes rippleAnim{to{transform:scale(1);opacity:0}}';
+document.head.appendChild(rippleStyle);
+</script>
 </body>
 </html>
-
     
  
        
