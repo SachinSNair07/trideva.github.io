@@ -5,1807 +5,709 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Trideva Interactive — Game Studio</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-
 <style>
-/* ═══════════════════════════════════════════════
-   CSS VARIABLES & RESET
-═══════════════════════════════════════════════ */
-:root {
-  --black:   #03050a;
-  --dark:    #080d18;
-  --panel:   #0c1322;
-  --card:    rgba(12,20,38,0.75);
-  --border:  rgba(0,168,255,0.12);
-  --blue:    #00a8ff;
-  --orange:  #ff6a00;
-  --cyan:    #00e5ff;
-  --gold:    #ffca28;
-  --red:     #ff3d57;
-  --text:    #d0dff5;
-  --muted:   #46607e;
-  --glow-b:  0 0 40px rgba(0,168,255,0.35);
-  --glow-o:  0 0 40px rgba(255,106,0,0.35);
+:root{
+  --black:#03050a;--dark:#080d18;--panel:#0c1322;
+  --card:rgba(12,20,38,0.78);--border:rgba(0,168,255,0.12);
+  --blue:#00a8ff;--orange:#ff6a00;--cyan:#00e5ff;
+  --gold:#ffca28;--red:#ff3d57;--text:#d0dff5;--muted:#46607e;
+  --glow-b:0 0 40px rgba(0,168,255,.35);--glow-o:0 0 40px rgba(255,106,0,.35);
 }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Syne',sans-serif;background:var(--black);color:var(--text);overflow-x:hidden;cursor:none}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--black)}::-webkit-scrollbar-thumb{background:var(--blue);border-radius:2px}
+::selection{background:rgba(0,168,255,.22);color:var(--text)}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");pointer-events:none;z-index:9997;opacity:.55}
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; font-size: 16px; }
-body {
-  font-family: 'Syne', sans-serif;
-  background: var(--black);
-  color: var(--text);
-  overflow-x: hidden;
-  cursor: none;
-}
+/* CURSOR */
+#cursor{position:fixed;top:0;left:0;width:10px;height:10px;background:var(--blue);border-radius:50%;pointer-events:none;z-index:10000;transform:translate(-50%,-50%);transition:transform .1s,background .2s}
+#cursor-ring{position:fixed;top:0;left:0;width:36px;height:36px;border:1.5px solid rgba(0,168,255,.55);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .2s,height .2s,border-color .2s}
 
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--black); }
-::-webkit-scrollbar-thumb { background: var(--blue); border-radius: 2px; }
+/* LOADER */
+#loader{position:fixed;inset:0;background:var(--black);z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .8s,visibility .8s}
+#loader.gone{opacity:0;visibility:hidden}
+.loader-logo-wrap{display:flex;flex-direction:column;align-items:center;gap:16px;margin-bottom:44px}
+.loader-logo-img{width:90px;height:90px;object-fit:contain;animation:lFloat 2s ease infinite alternate}
+@keyframes lFloat{from{transform:translateY(0) scale(1)}to{transform:translateY(-8px) scale(1.05)}}
+.loader-text{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,4rem);letter-spacing:.22em;color:var(--text)}
+.loader-text span{color:var(--gold)}
+.loader-bar-wrap{width:220px;height:2px;background:rgba(255,255,255,.07);border-radius:1px;overflow:hidden}
+.loader-bar{height:100%;background:linear-gradient(90deg,var(--blue),var(--gold));width:0%;animation:lBar 2.2s ease forwards}
+@keyframes lBar{to{width:100%}}
+.loader-pct{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);letter-spacing:.2em;margin-top:10px}
 
-/* ═══════════════════════════════════════════════
-   CUSTOM CURSOR
-═══════════════════════════════════════════════ */
-#cursor {
-  position: fixed; top: 0; left: 0;
-  width: 10px; height: 10px;
-  background: var(--blue);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 10000;
-  transition: transform 0.1s, background 0.2s;
-  transform: translate(-50%,-50%);
-}
-#cursor-ring {
-  position: fixed; top: 0; left: 0;
-  width: 36px; height: 36px;
-  border: 1.5px solid rgba(0,168,255,0.55);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 9999;
-  transform: translate(-50%,-50%);
-  transition: transform 0.25s cubic-bezier(.18,.89,.32,1.28),
-              width 0.2s, height 0.2s, border-color 0.2s;
-}
-body:hover #cursor-ring { border-color: rgba(0,168,255,0.55); }
-a:hover ~ #cursor, button:hover ~ #cursor { background: var(--orange); }
+/* PROGRESS + BACK TOP */
+#progress-bar{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--blue),var(--cyan));z-index:501;width:0%;box-shadow:0 0 8px rgba(0,168,255,.5)}
+#back-top{position:fixed;bottom:32px;right:32px;width:44px;height:44px;background:rgba(0,168,255,.12);border:1px solid rgba(0,168,255,.3);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:var(--blue);opacity:0;transform:translateY(10px);transition:all .3s;z-index:400}
+#back-top.visible{opacity:1;transform:translateY(0)}
+#back-top:hover{background:rgba(0,168,255,.25);box-shadow:var(--glow-b)}
 
-/* ═══════════════════════════════════════════════
-   LOADING SCREEN
-═══════════════════════════════════════════════ */
-#loader {
-  position: fixed; inset: 0;
-  background: var(--black);
-  z-index: 9998;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  transition: opacity 0.8s ease, visibility 0.8s;
-}
-#loader.gone { opacity: 0; visibility: hidden; }
-.loader-logo {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(2.5rem, 6vw, 5rem);
-  letter-spacing: .2em;
-  color: var(--text);
-  margin-bottom: 48px;
-  overflow: hidden;
-}
-.loader-logo span { color: var(--blue); }
-.loader-bar-wrap {
-  width: 240px; height: 2px;
-  background: rgba(255,255,255,0.07);
-  border-radius: 1px; overflow: hidden;
-}
-.loader-bar {
-  height: 100%;
-  background: linear-gradient(90deg, var(--blue), var(--cyan));
-  border-radius: 1px;
-  width: 0%;
-  animation: loadBar 2s ease forwards;
-}
-@keyframes loadBar { to { width: 100%; } }
-.loader-pct {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .7rem;
-  color: var(--muted);
-  letter-spacing: .2em;
-  margin-top: 12px;
-}
+/* NAVBAR */
+nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,5vw,72px);height:72px;background:rgba(3,5,10,0);border-bottom:1px solid transparent;transition:background .4s,border-color .4s,backdrop-filter .4s}
+nav.scrolled{background:rgba(3,5,10,.93);border-color:var(--border);backdrop-filter:blur(20px)}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:.18em;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:10px}
+.nav-logo-img{width:34px;height:34px;object-fit:contain;border-radius:6px;filter:drop-shadow(0 0 8px rgba(255,202,40,.4))}
+.nav-logo-fb{width:34px;height:34px;background:var(--blue);border-radius:6px;display:none;align-items:center;justify-content:center;font-size:16px;box-shadow:0 0 16px rgba(0,168,255,.35)}
+.nav-links{display:flex;gap:32px;list-style:none}
+.nav-links a{font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:500;letter-spacing:.14em;color:var(--muted);text-decoration:none;text-transform:uppercase;transition:color .2s;position:relative}
+.nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--blue);transition:width .3s}
+.nav-links a:hover{color:var(--blue)}
+.nav-links a:hover::after{width:100%}
+.nav-cta{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;padding:10px 22px;background:transparent;color:var(--blue);border:1px solid rgba(0,168,255,.35);border-radius:3px;cursor:pointer;text-decoration:none;transition:all .2s}
+.nav-cta:hover{background:rgba(0,168,255,.1);border-color:var(--blue);box-shadow:var(--glow-b)}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px}
+.hamburger span{display:block;width:22px;height:2px;background:var(--text);border-radius:1px;transition:all .3s}
+.mobile-menu{display:none;position:fixed;top:72px;left:0;right:0;background:rgba(3,5,10,.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:24px clamp(20px,5vw,72px);flex-direction:column;gap:20px;z-index:490}
+.mobile-menu.open{display:flex}
+.mobile-menu a{color:var(--text);text-decoration:none;font-size:1rem;font-weight:600;letter-spacing:.05em}
 
-/* ═══════════════════════════════════════════════
-   NOISE TEXTURE OVERLAY
-═══════════════════════════════════════════════ */
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='.035'/%3E%3C/svg%3E");
-  pointer-events: none; z-index: 9997; opacity: .6;
-}
+/* HERO */
+#hero{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:120px 24px 80px;position:relative;overflow:hidden}
+#hero-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.hero-grid{position:absolute;inset:0;background:linear-gradient(rgba(0,168,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,168,255,.025) 1px,transparent 1px);background-size:80px 80px;pointer-events:none}
+.hero-gc{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:700px;height:700px;background:radial-gradient(circle,rgba(0,168,255,.07) 0%,transparent 65%);pointer-events:none}
+.hero-go{position:absolute;top:60%;left:65%;transform:translate(-50%,-50%);width:400px;height:400px;background:radial-gradient(circle,rgba(255,106,0,.06) 0%,transparent 65%);pointer-events:none}
+.scanlines{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0,transparent 3px,rgba(0,0,0,.06) 3px,rgba(0,0,0,.06) 4px);pointer-events:none;opacity:.5}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 18px;border:1px solid rgba(0,168,255,.25);border-radius:50px;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--blue);background:rgba(0,168,255,.06);margin-bottom:24px;animation:fU .9s ease both}
+.eyebrow-dot{width:5px;height:5px;background:var(--blue);border-radius:50%;animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.hero-logo-img{width:clamp(90px,14vw,160px);height:clamp(90px,14vw,160px);object-fit:contain;margin-bottom:18px;filter:drop-shadow(0 0 28px rgba(255,202,40,.4)) drop-shadow(0 0 55px rgba(0,168,255,.22));animation:fU .9s .05s ease both,lGlow 3s ease infinite alternate}
+@keyframes lGlow{from{filter:drop-shadow(0 0 22px rgba(255,202,40,.35)) drop-shadow(0 0 45px rgba(0,168,255,.2))}to{filter:drop-shadow(0 0 38px rgba(255,202,40,.6)) drop-shadow(0 0 75px rgba(0,168,255,.38))}}
+.hero-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,9vw,8.5rem);line-height:.9;letter-spacing:.06em;margin-bottom:6px;animation:fU .9s .1s ease both}
+.t-blue{color:var(--blue);text-shadow:0 0 55px rgba(0,168,255,.5)}
+.t-outline{-webkit-text-stroke:1.5px rgba(255,255,255,.18);color:transparent}
+.hero-sub{font-family:'Bebas Neue',sans-serif;font-size:clamp(.9rem,2.5vw,1.9rem);letter-spacing:.3em;color:var(--orange);text-shadow:0 0 28px rgba(255,106,0,.4);margin-bottom:28px;animation:fU .9s .2s ease both}
+.tw-wrap{font-family:'JetBrains Mono',monospace;font-size:clamp(.75rem,1.4vw,.95rem);color:var(--muted);letter-spacing:.05em;margin-bottom:48px;min-height:1.5em;animation:fU .9s .3s ease both}
+#tw::after{content:'|';animation:blink .8s ease infinite;color:var(--blue)}
+.hero-btns{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;animation:fU .9s .4s ease both}
+.btn-p{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.2em;padding:16px 48px;background:var(--blue);color:var(--black);border:none;border-radius:3px;cursor:pointer;transition:all .25s;box-shadow:0 0 40px rgba(0,168,255,.35);text-decoration:none;display:inline-block;position:relative;overflow:hidden}
+.btn-p::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.2),transparent);opacity:0;transition:opacity .2s}
+.btn-p:hover{transform:translateY(-3px);box-shadow:0 0 60px rgba(0,168,255,.6)}
+.btn-p:hover::before{opacity:1}
+.btn-g{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.2em;padding:15px 48px;background:transparent;color:var(--text);border:1px solid rgba(255,255,255,.15);border-radius:3px;cursor:pointer;transition:all .25s;text-decoration:none;display:inline-block}
+.btn-g:hover{border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.04);transform:translateY(-3px)}
+.scroll-ind{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.2em;animation:fU 1s .8s ease both}
+.scroll-mouse{width:22px;height:34px;border:1.5px solid var(--muted);border-radius:12px;display:flex;justify-content:center;padding-top:6px}
+.scroll-dot{width:3px;height:6px;background:var(--blue);border-radius:2px;animation:sDot 1.5s ease infinite}
+@keyframes sDot{0%,100%{transform:translateY(0);opacity:1}50%{transform:translateY(8px);opacity:.3}}
+@keyframes fU{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 
-/* ═══════════════════════════════════════════════
-   NAVBAR
-═══════════════════════════════════════════════ */
-nav {
-  position: fixed; top: 0; left: 0; right: 0;
-  z-index: 500;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 clamp(20px, 5vw, 72px);
-  height: 72px;
-  background: rgba(3,5,10,0.0);
-  border-bottom: 1px solid transparent;
-  transition: background .4s, border-color .4s, backdrop-filter .4s;
-}
-nav.scrolled {
-  background: rgba(3,5,10,0.92);
-  border-color: var(--border);
-  backdrop-filter: blur(20px);
-}
-.nav-logo {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.4rem;
-  letter-spacing: .18em;
-  color: var(--text);
-  text-decoration: none;
-  display: flex; align-items: center; gap: 10px;
-}
-.nav-logo-mark {
-  width: 30px; height: 30px;
-  background: var(--blue);
-  border-radius: 5px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px;
-  box-shadow: 0 0 20px rgba(0,168,255,.4);
-}
-.nav-links {
-  display: flex; gap: 36px; list-style: none;
-}
-.nav-links a {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .72rem; font-weight: 500;
-  letter-spacing: .15em;
-  color: var(--muted);
-  text-decoration: none;
-  text-transform: uppercase;
-  transition: color .2s;
-  position: relative;
-}
-.nav-links a::after {
-  content: ''; position: absolute;
-  bottom: -4px; left: 0; width: 0; height: 1px;
-  background: var(--blue);
-  transition: width .3s;
-}
-.nav-links a:hover { color: var(--blue); }
-.nav-links a:hover::after { width: 100%; }
+/* SHARED */
+.sey{font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:500;letter-spacing:.3em;text-transform:uppercase;color:var(--blue);margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.sey::before{content:'';display:inline-block;width:30px;height:1px;background:var(--blue)}
+.stitle{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,4.5rem);letter-spacing:.05em;line-height:1;margin-bottom:16px}
+.sdesc{color:var(--muted);font-size:.95rem;line-height:1.85;max-width:560px}
+.reveal{opacity:0;transform:translateY(40px);transition:opacity .8s ease,transform .8s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.rl{opacity:0;transform:translateX(-40px);transition:opacity .8s ease,transform .8s ease}
+.rr{opacity:0;transform:translateX(40px);transition:opacity .8s ease,transform .8s ease}
+.rl.visible,.rr.visible{opacity:1;transform:translateX(0)}
 
-.nav-cta {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .7rem; font-weight: 500;
-  letter-spacing: .1em; text-transform: uppercase;
-  padding: 10px 22px;
-  background: transparent;
-  color: var(--blue);
-  border: 1px solid rgba(0,168,255,.35);
-  border-radius: 3px;
-  cursor: pointer;
-  text-decoration: none;
-  transition: all .2s;
-}
-.nav-cta:hover {
-  background: rgba(0,168,255,.1);
-  border-color: var(--blue);
-  box-shadow: var(--glow-b);
-}
+/* STATS */
+#stats{background:var(--panel);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.stats-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.stat-item{padding:36px 24px;text-align:center;border-right:1px solid var(--border);transition:background .3s}
+.stat-item:last-child{border-right:none}
+.stat-item:hover{background:rgba(0,168,255,.04)}
+.stat-num{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:.05em;color:var(--blue);line-height:1;text-shadow:0 0 20px rgba(0,168,255,.3)}
+.stat-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-top:6px}
 
-/* hamburger */
-.hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; }
-.hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 1px; transition: all .3s; }
+/* ABOUT */
+#about{padding:120px clamp(20px,7vw,80px);max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1.1fr;gap:80px;align-items:center}
+.about-left .sdesc{max-width:480px;margin-bottom:32px}
+.about-right{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:40px;backdrop-filter:blur(12px);position:relative;overflow:hidden}
+.about-right::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--blue),var(--cyan),transparent)}
+.sk-row{margin-bottom:22px}.sk-row:last-child{margin-bottom:0}
+.sk-info{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.sk-name{font-family:'JetBrains Mono',monospace;font-size:.77rem;color:var(--text)}
+.sk-pct{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--blue)}
+.sk-track{height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden}
+.sk-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--cyan));width:0%;transition:width 1.2s cubic-bezier(.4,0,.2,1);box-shadow:0 0 8px rgba(0,168,255,.4)}
+.sk-fill.or{background:linear-gradient(90deg,var(--orange),#ffca28);box-shadow:0 0 8px rgba(255,106,0,.4)}
+.sk-fill.cy{background:linear-gradient(90deg,var(--cyan),#00e5ff80)}
+.sk-fill.go{background:linear-gradient(90deg,var(--gold),#fff176);box-shadow:0 0 8px rgba(255,202,40,.4)}
+.badges{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+.bdg{padding:6px 16px;border:1px solid rgba(0,168,255,.2);border-radius:50px;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.1em;color:var(--blue);background:rgba(0,168,255,.06)}
+.bdg.or{border-color:rgba(255,106,0,.2);color:var(--orange);background:rgba(255,106,0,.06)}
 
-/* mobile menu */
-.mobile-menu {
-  display: none; position: fixed;
-  top: 72px; left: 0; right: 0;
-  background: rgba(3,5,10,.97);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-  padding: 24px clamp(20px,5vw,72px);
-  flex-direction: column; gap: 20px;
-  z-index: 490;
-}
-.mobile-menu.open { display: flex; }
-.mobile-menu a { color: var(--text); text-decoration: none; font-size: 1rem; font-weight: 600; letter-spacing: .05em; }
+/* GAMES */
+.gw{padding:120px clamp(20px,5vw,60px);max-width:1300px;margin:0 auto}
+.gh{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:64px;flex-wrap:wrap;gap:20px}
+.gg{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.gc{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;backdrop-filter:blur(12px);transition:all .4s cubic-bezier(.4,0,.2,1);position:relative}
+.gc::before{content:'';position:absolute;inset:0;border-radius:12px;background:linear-gradient(135deg,rgba(0,168,255,.06),transparent);opacity:0;transition:opacity .4s;pointer-events:none;z-index:1}
+.gc:hover{transform:translateY(-10px);border-color:rgba(0,168,255,.4);box-shadow:0 30px 60px rgba(0,0,0,.55),0 0 40px rgba(0,168,255,.15)}
+.gc:hover::before{opacity:1}
+.gthumb{position:relative;overflow:hidden;height:240px}
+.gcover{width:100%;height:100%;object-fit:cover;object-position:center top;transition:transform .5s cubic-bezier(.4,0,.2,1),filter .4s;display:block}
+.gc:hover .gcover{transform:scale(1.07);filter:brightness(1.1) saturate(1.15)}
+.gfb{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:4.5rem}
+.fb-tvm{background:linear-gradient(135deg,#0a1628,#0d2040)}
+.fb-chor{background:linear-gradient(135deg,#1a0a0a,#2d1010)}
+.fb-yak{background:linear-gradient(135deg,#050a0a,#081818)}
+.gstatus{position:absolute;top:14px;right:14px;font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:500;letter-spacing:.15em;text-transform:uppercase;padding:4px 12px;border-radius:20px;z-index:2;backdrop-filter:blur(8px)}
+.ss{background:rgba(255,202,40,.18);border:1px solid rgba(255,202,40,.4);color:var(--gold)}
+.sl{background:rgba(255,106,0,.12);border:1px solid rgba(255,106,0,.28);color:var(--orange)}
+.gto{position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(to top,var(--black),transparent);z-index:1}
+.gbody{padding:26px 28px 30px;position:relative;z-index:2}
+.gplat{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+.gtitle{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:.08em;margin-bottom:10px;color:var(--text);transition:color .3s}
+.gc:hover .gtitle{color:var(--blue)}
+.gdesc{font-size:.84rem;line-height:1.7;color:var(--muted);margin-bottom:18px}
+.gfeat{list-style:none;display:flex;flex-direction:column;gap:5px;margin-bottom:24px}
+.gfeat li{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--muted);display:flex;align-items:center;gap:8px}
+.gfeat li::before{content:'→';color:var(--blue);flex-shrink:0}
+.gc:nth-child(2) .gfeat li::before{color:var(--red)}
+.gc:nth-child(3) .gfeat li::before{color:#00c896}
+.gfoot{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding-top:18px}
+.glaunch{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--muted);letter-spacing:.08em}
+.glaunch strong{color:var(--gold)}
+.btn-c{font-family:'Bebas Neue',sans-serif;font-size:.8rem;letter-spacing:.15em;padding:8px 22px;background:transparent;color:var(--blue);border:1px solid rgba(0,168,255,.3);border-radius:3px;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-block}
+.btn-c:hover{background:rgba(0,168,255,.1);border-color:var(--blue);box-shadow:var(--glow-b)}
+.gc:nth-child(2) .btn-c{color:var(--red);border-color:rgba(255,61,87,.3)}
+.gc:nth-child(2) .btn-c:hover{background:rgba(255,61,87,.1);border-color:var(--red)}
+.gc:nth-child(3) .btn-c{color:#00c896;border-color:rgba(0,200,150,.3)}
+.gc:nth-child(3) .btn-c:hover{background:rgba(0,200,150,.1);border-color:#00c896}
 
-/* ═══════════════════════════════════════════════
-   HERO
-═══════════════════════════════════════════════ */
-#hero {
-  min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  flex-direction: column; text-align: center;
-  padding: 120px 24px 80px;
-  position: relative; overflow: hidden;
-}
+/* DEV PROGRESS */
+#devprogress{padding:100px clamp(20px,5vw,60px);background:var(--panel);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.dp-inner{max-width:1300px;margin:0 auto}
+.dp-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:24px;margin-bottom:52px}
+.build-tag{font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.15em;color:var(--muted);padding:6px 14px;border:1px solid rgba(255,255,255,.08);border-radius:20px;background:rgba(255,255,255,.03);white-space:nowrap}
+.build-tag span{color:var(--gold)}
 
-/* Canvas particle bg */
-#hero-canvas {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  pointer-events: none;
-}
+/* Main hero shot */
+.dp-hero{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:20px;box-shadow:0 20px 60px rgba(0,0,0,.6);aspect-ratio:16/9;cursor:pointer}
+.dp-hero img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s}
+.dp-hero:hover img{transform:scale(1.02)}
+.dp-hero-label{position:absolute;bottom:0;left:0;right:0;padding:20px 24px;background:linear-gradient(to top,rgba(3,5,10,.9),transparent);font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.12em;color:var(--text)}
+.dp-hero-label strong{color:var(--blue);display:block;font-size:.8rem;margin-bottom:3px}
+.dp-live{position:absolute;top:16px;left:16px;padding:5px 14px;background:rgba(0,168,255,.15);border:1px solid rgba(0,168,255,.35);border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.15em;color:var(--blue);backdrop-filter:blur(8px);display:flex;align-items:center;gap:6px}
+.dp-live::before{content:'';width:6px;height:6px;background:#ff4444;border-radius:50%;animation:blink 1s infinite}
 
-/* Grid overlay */
-.hero-grid {
-  position: absolute; inset: 0;
-  background:
-    linear-gradient(rgba(0,168,255,.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,168,255,.025) 1px, transparent 1px);
-  background-size: 80px 80px;
-  pointer-events: none;
-}
+/* 4-thumb strip */
+.dp-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:36px}
+.dp-thumb{position:relative;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.06);aspect-ratio:16/9;cursor:pointer;transition:all .35s}
+.dp-thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s,filter .4s}
+.dp-thumb:hover{border-color:rgba(0,168,255,.4);box-shadow:0 0 20px rgba(0,168,255,.15);transform:translateY(-4px)}
+.dp-thumb:hover img{transform:scale(1.06);filter:brightness(1.08)}
+.dp-tov{position:absolute;inset:0;background:rgba(3,5,10,.55);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s;font-size:1.6rem}
+.dp-thumb:hover .dp-tov{opacity:1}
+.dp-tlabel{position:absolute;bottom:0;left:0;right:0;padding:7px 10px;background:linear-gradient(to top,rgba(3,5,10,.9),transparent);font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.1em;color:var(--muted)}
 
-/* Radial glow center */
-.hero-glow-center {
-  position: absolute;
-  top: 50%; left: 50%; transform: translate(-50%,-50%);
-  width: 700px; height: 700px;
-  background: radial-gradient(circle, rgba(0,168,255,.07) 0%, transparent 65%);
-  pointer-events: none;
-}
-.hero-glow-orange {
-  position: absolute;
-  top: 60%; left: 65%; transform: translate(-50%,-50%);
-  width: 400px; height: 400px;
-  background: radial-gradient(circle, rgba(255,106,0,.06) 0%, transparent 65%);
-  pointer-events: none;
-}
+/* Progress meters */
+.dp-meters{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.dp-meter{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:18px 20px}
+.dp-mlabel{font-family:'JetBrains Mono',monospace;font-size:.63rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.dp-mlabel span{color:var(--gold)}
+.mtrack{height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden}
+.mfill{height:100%;border-radius:2px;width:0%;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+.mfb{background:linear-gradient(90deg,var(--blue),var(--cyan));box-shadow:0 0 6px rgba(0,168,255,.4)}
+.mfo{background:linear-gradient(90deg,var(--orange),var(--gold));box-shadow:0 0 6px rgba(255,106,0,.4)}
+.mfg{background:linear-gradient(90deg,#00c896,#00e5a0);box-shadow:0 0 6px rgba(0,200,150,.4)}
 
-/* Scanlines */
-.scanlines {
-  position: absolute; inset: 0;
-  background: repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(0,0,0,.06) 3px, rgba(0,0,0,.06) 4px);
-  pointer-events: none; opacity: .5;
-}
+/* LIGHTBOX */
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:8000;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(10px)}
+#lightbox.open{display:flex}
+.lb-img{max-width:90vw;max-height:88vh;border-radius:8px;border:1px solid var(--border);box-shadow:0 0 80px rgba(0,168,255,.2);object-fit:contain;display:block}
+.lb-close{position:absolute;top:24px;right:28px;font-size:2rem;color:var(--muted);cursor:pointer;transition:color .2s;line-height:1;z-index:1}
+.lb-close:hover{color:var(--text)}
+.lb-nav{position:absolute;top:50%;transform:translateY(-50%);font-size:2.5rem;color:var(--muted);cursor:pointer;transition:color .2s;padding:12px;user-select:none;z-index:1}
+.lb-nav:hover{color:var(--blue)}
+.lb-prev{left:16px}.lb-next{right:16px}
+.lb-cap{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--muted);letter-spacing:.12em;text-align:center;white-space:nowrap}
 
-.hero-eyebrow {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 6px 18px;
-  border: 1px solid rgba(0,168,255,.25);
-  border-radius: 50px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .68rem; font-weight: 500;
-  letter-spacing: .2em; text-transform: uppercase;
-  color: var(--blue);
-  background: rgba(0,168,255,.06);
-  margin-bottom: 28px;
-  animation: fadeUp .9s ease both;
-}
-.eyebrow-dot {
-  width: 5px; height: 5px;
-  background: var(--blue); border-radius: 50%;
-  animation: pulse 1.5s ease infinite;
-}
-@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.7)} }
+/* GALLERY */
+#work{padding:120px clamp(20px,5vw,60px);border-top:1px solid var(--border)}
+.wi{max-width:1300px;margin:0 auto}
+.wh{margin-bottom:56px}
+.gg2{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,220px);gap:16px}
+.gi{border-radius:8px;overflow:hidden;position:relative;border:1px solid var(--border);cursor:pointer;transition:all .4s}
+.gi:first-child{grid-column:span 2}
+.gi:nth-child(5){grid-column:span 2}
+.gbg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem;transition:transform .5s}
+.gi:hover .gbg{transform:scale(1.08)}
+.gi:hover{border-color:rgba(0,168,255,.4)}
+.gov{position:absolute;inset:0;background:linear-gradient(to top,rgba(3,5,10,.9) 0%,transparent 60%);display:flex;align-items:flex-end;padding:20px;opacity:0;transition:opacity .3s}
+.gi:hover .gov{opacity:1}
+.gcap{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.1em;color:var(--text)}
+.gcap strong{color:var(--blue);display:block;margin-bottom:2px;font-size:.76rem}
+.gb1{background:linear-gradient(135deg,#060f1e,#0d2040)}
+.gb2{background:linear-gradient(135deg,#1a0d06,#2d1800)}
+.gb3{background:linear-gradient(135deg,#06111a,#0a1e2e)}
+.gb4{background:linear-gradient(135deg,#0a0606,#1a0a0a)}
+.gb5{background:linear-gradient(135deg,#060a0f,#0d151e)}
+.gb6{background:linear-gradient(135deg,#05080a,#0a1010)}
 
-.hero-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(3.5rem, 10vw, 10rem);
-  line-height: .9; letter-spacing: .06em;
-  margin-bottom: 6px;
-  animation: fadeUp .9s .1s ease both;
-  position: relative;
-}
-.hero-title .t-blue { color: var(--blue); text-shadow: 0 0 60px rgba(0,168,255,.5); }
-.hero-title .t-outline {
-  -webkit-text-stroke: 1.5px rgba(255,255,255,.15);
-  color: transparent;
-}
+/* ROADMAP */
+#roadmap{padding:120px clamp(20px,5vw,60px);max-width:900px;margin:0 auto}
+.timeline{position:relative;margin-top:64px;padding-left:40px}
+.timeline::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:1px;background:linear-gradient(to bottom,var(--blue),var(--orange),transparent)}
+.tl-item{position:relative;margin-bottom:48px}
+.tl-item:last-child{margin-bottom:0}
+.tl-dot{position:absolute;left:-38px;top:4px;width:14px;height:14px;border-radius:50%;background:var(--blue);border:2px solid var(--black);box-shadow:0 0 12px rgba(0,168,255,.5)}
+.tl-dot.or{background:var(--orange);box-shadow:0 0 12px rgba(255,106,0,.5)}
+.tl-dot.mu{background:var(--muted);box-shadow:none}
+.tl-date{font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.2em;color:var(--blue);text-transform:uppercase;margin-bottom:6px}
+.tl-date.or{color:var(--orange)}.tl-date.mu{color:var(--muted)}
+.tl-title{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:.08em;margin-bottom:6px}
+.tl-desc{font-size:.87rem;color:var(--muted);line-height:1.7}
 
-.hero-sub {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(1rem, 2.5vw, 2rem);
-  letter-spacing: .3em;
-  color: var(--orange);
-  text-shadow: 0 0 30px rgba(255,106,0,.4);
-  margin-bottom: 32px;
-  animation: fadeUp .9s .2s ease both;
-}
+/* CONTACT */
+#contact{padding:120px clamp(20px,5vw,60px);background:var(--panel);border-top:1px solid var(--border)}
+.ci{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start}
+.cl-links{display:flex;flex-direction:column;gap:14px;margin-top:36px}
+.cl-link{display:flex;align-items:center;gap:16px;padding:18px 22px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;text-decoration:none;transition:all .3s;color:var(--text)}
+.cl-link:hover{border-color:rgba(0,168,255,.35);background:rgba(0,168,255,.05);transform:translateX(6px);box-shadow:var(--glow-b)}
+.cl-icon{width:40px;height:40px;background:rgba(0,168,255,.1);border:1px solid rgba(0,168,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.cl-info{flex:1}
+.cl-plat{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-bottom:2px}
+.cl-val{font-size:.9rem;font-weight:600}
+.cl-arr{font-size:1rem;color:var(--muted);transition:color .3s,transform .3s}
+.cl-link:hover .cl-arr{color:var(--blue);transform:translateX(4px)}
+.cform{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:40px;backdrop-filter:blur(12px);position:relative;overflow:hidden}
+.cform::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--orange),var(--blue),transparent)}
+.fr{margin-bottom:20px}
+.fr label{display:block;font-family:'JetBrains Mono',monospace;font-size:.63rem;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+.fr input,.fr textarea,.fr select{width:100%;padding:13px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:5px;color:var(--text);font-family:'Syne',sans-serif;font-size:.9rem;transition:border-color .2s,box-shadow .2s;resize:none;outline:none;-webkit-appearance:none}
+.fr input:focus,.fr textarea:focus,.fr select:focus{border-color:rgba(0,168,255,.4);box-shadow:0 0 0 3px rgba(0,168,255,.08)}
+.fr textarea{height:120px}
+.fr select option{background:var(--panel)}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.btn-sub{width:100%;padding:16px;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.2em;background:var(--orange);color:#fff;border:none;border-radius:4px;cursor:pointer;transition:all .2s;box-shadow:0 0 30px rgba(255,106,0,.25)}
+.btn-sub:hover{transform:translateY(-2px);box-shadow:0 0 50px rgba(255,106,0,.45)}
 
-.typewriter-wrap {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: clamp(.8rem, 1.5vw, 1rem);
-  color: var(--muted);
-  letter-spacing: .05em;
-  margin-bottom: 52px;
-  min-height: 1.6em;
-  animation: fadeUp .9s .3s ease both;
-}
-#typewriter::after {
-  content: '|';
-  animation: blink .8s ease infinite;
-  color: var(--blue);
-}
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+/* FOOTER */
+footer{padding:60px clamp(20px,5vw,72px) 32px;border-top:1px solid var(--border)}
+.fi{max-width:1300px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:24px;padding-bottom:32px;border-bottom:1px solid var(--border);margin-bottom:28px}
+.fl{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.18em;color:var(--text);display:flex;align-items:center;gap:10px}
+.fl img{width:30px;height:30px;object-fit:contain;border-radius:5px;filter:drop-shadow(0 0 8px rgba(255,202,40,.35))}
+.flinks{display:flex;gap:28px;flex-wrap:wrap}
+.flinks a{font-family:'JetBrains Mono',monospace;font-size:.63rem;letter-spacing:.15em;color:var(--muted);text-decoration:none;text-transform:uppercase;transition:color .2s}
+.flinks a:hover{color:var(--blue)}
+.fc{max-width:1300px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.fc p{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);letter-spacing:.08em}
+.fc span{color:var(--blue)}
 
-.hero-buttons {
-  display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
-  animation: fadeUp .9s .4s ease both;
-}
-
-.btn-primary {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1rem; letter-spacing: .2em;
-  padding: 16px 48px;
-  background: var(--blue);
-  color: var(--black);
-  border: none; border-radius: 3px;
-  cursor: pointer;
-  transition: all .25s;
-  box-shadow: 0 0 40px rgba(0,168,255,.35);
-  text-decoration: none; display: inline-block;
-  position: relative; overflow: hidden;
-}
-.btn-primary::before {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,.2), transparent);
-  opacity: 0; transition: opacity .2s;
-}
-.btn-primary:hover { transform: translateY(-3px); box-shadow: 0 0 60px rgba(0,168,255,.6); }
-.btn-primary:hover::before { opacity: 1; }
-
-.btn-ghost {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1rem; letter-spacing: .2em;
-  padding: 15px 48px;
-  background: transparent;
-  color: var(--text);
-  border: 1px solid rgba(255,255,255,.15);
-  border-radius: 3px; cursor: pointer;
-  transition: all .25s; text-decoration: none; display: inline-block;
-}
-.btn-ghost:hover {
-  border-color: rgba(255,255,255,.35);
-  background: rgba(255,255,255,.04);
-  transform: translateY(-3px);
-}
-
-.scroll-indicator {
-  position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  color: var(--muted);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .6rem; letter-spacing: .2em;
-  animation: fadeUp 1s .8s ease both;
-}
-.scroll-mouse {
-  width: 22px; height: 34px;
-  border: 1.5px solid var(--muted);
-  border-radius: 12px;
-  display: flex; justify-content: center; padding-top: 6px;
-}
-.scroll-mouse-dot {
-  width: 3px; height: 6px;
-  background: var(--blue); border-radius: 2px;
-  animation: scrollDot 1.5s ease infinite;
-}
-@keyframes scrollDot { 0%,100%{transform:translateY(0);opacity:1} 50%{transform:translateY(8px);opacity:.3} }
-
-@keyframes fadeUp {
-  from { opacity:0; transform:translateY(24px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-
-/* ═══════════════════════════════════════════════
-   SECTION SHARED
-═══════════════════════════════════════════════ */
-.section-eyebrow {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .68rem; font-weight: 500;
-  letter-spacing: .3em; text-transform: uppercase;
-  color: var(--blue); margin-bottom: 10px;
-  display: flex; align-items: center; gap: 10px;
-}
-.section-eyebrow::before {
-  content: ''; display: inline-block;
-  width: 30px; height: 1px; background: var(--blue);
-}
-.section-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(2rem, 5vw, 4.5rem);
-  letter-spacing: .05em; line-height: 1;
-  margin-bottom: 16px;
-}
-.section-desc {
-  color: var(--muted); font-size: .95rem; line-height: 1.85;
-  max-width: 560px;
-}
-
-/* Reveal animation */
-.reveal {
-  opacity: 0; transform: translateY(40px);
-  transition: opacity .8s ease, transform .8s ease;
-}
-.reveal.visible { opacity: 1; transform: translateY(0); }
-.reveal-left  { opacity: 0; transform: translateX(-40px); transition: opacity .8s ease, transform .8s ease; }
-.reveal-right { opacity: 0; transform: translateX(40px);  transition: opacity .8s ease, transform .8s ease; }
-.reveal-left.visible, .reveal-right.visible { opacity: 1; transform: translateX(0); }
-
-/* ═══════════════════════════════════════════════
-   STATS BAR
-═══════════════════════════════════════════════ */
-#stats {
-  background: var(--panel);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  padding: 0;
-}
-.stats-inner {
-  max-width: 1100px; margin: 0 auto;
-  display: grid; grid-template-columns: repeat(4,1fr);
-  divide: left;
-}
-.stat-item {
-  padding: 36px 24px;
-  text-align: center;
-  border-right: 1px solid var(--border);
-  position: relative;
-  transition: background .3s;
-}
-.stat-item:last-child { border-right: none; }
-.stat-item:hover { background: rgba(0,168,255,.04); }
-.stat-num {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 3rem; letter-spacing: .05em;
-  color: var(--blue); line-height: 1;
-  text-shadow: 0 0 20px rgba(0,168,255,.3);
-}
-.stat-label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .65rem; letter-spacing: .2em;
-  text-transform: uppercase; color: var(--muted);
-  margin-top: 6px;
-}
-
-/* ═══════════════════════════════════════════════
-   ABOUT
-═══════════════════════════════════════════════ */
-#about {
-  padding: 120px clamp(20px,7vw,80px);
-  max-width: 1200px; margin: 0 auto;
-  display: grid; grid-template-columns: 1fr 1.1fr;
-  gap: 80px; align-items: center;
-}
-.about-left .section-desc { max-width: 480px; margin-bottom: 36px; }
-.about-right {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 40px;
-  backdrop-filter: blur(12px);
-  position: relative; overflow: hidden;
-}
-.about-right::before {
-  content: ''; position: absolute;
-  top: 0; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, transparent, var(--blue), var(--cyan), transparent);
-}
-
-.skill-row {
-  margin-bottom: 24px;
-}
-.skill-row:last-child { margin-bottom: 0; }
-.skill-info {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 8px;
-}
-.skill-name {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .78rem; letter-spacing: .05em; color: var(--text);
-}
-.skill-pct {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .7rem; color: var(--blue);
-}
-.skill-track {
-  height: 3px; background: rgba(255,255,255,.07); border-radius: 2px; overflow: hidden;
-}
-.skill-fill {
-  height: 100%; border-radius: 2px;
-  background: linear-gradient(90deg, var(--blue), var(--cyan));
-  width: 0%;
-  transition: width 1.2s cubic-bezier(.4,0,.2,1);
-  box-shadow: 0 0 8px rgba(0,168,255,.4);
-}
-.skill-fill.orange { background: linear-gradient(90deg, var(--orange), #ffca28); box-shadow: 0 0 8px rgba(255,106,0,.4); }
-.skill-fill.cyan   { background: linear-gradient(90deg, var(--cyan), #00e5ff80); }
-.skill-fill.gold   { background: linear-gradient(90deg, var(--gold), #fff176); box-shadow: 0 0 8px rgba(255,202,40,.4); }
-
-.about-badges {
-  display: flex; flex-wrap: wrap; gap: 10px; margin-top: 32px;
-}
-.badge {
-  padding: 6px 16px;
-  border: 1px solid rgba(0,168,255,.2);
-  border-radius: 50px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .68rem; letter-spacing: .1em;
-  color: var(--blue); background: rgba(0,168,255,.06);
-}
-.badge.orange { border-color: rgba(255,106,0,.2); color: var(--orange); background: rgba(255,106,0,.06); }
-
-/* ═══════════════════════════════════════════════
-   GAMES SECTION
-═══════════════════════════════════════════════ */
-#games {
-  padding: 120px clamp(20px,5vw,60px);
-  max-width: 1300px; margin: 0 auto;
-}
-.games-header {
-  display: flex; justify-content: space-between; align-items: flex-end;
-  margin-bottom: 64px; flex-wrap: wrap; gap: 20px;
-}
-
-.games-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-}
-
-.game-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
-  backdrop-filter: blur(12px);
-  transition: all .4s cubic-bezier(.4,0,.2,1);
-  position: relative;
-  group: true;
-}
-.game-card::before {
-  content: ''; position: absolute;
-  inset: 0; border-radius: 12px;
-  background: linear-gradient(135deg, rgba(0,168,255,.06), transparent);
-  opacity: 0; transition: opacity .4s;
-  pointer-events: none; z-index: 1;
-}
-.game-card:hover {
-  transform: translateY(-10px);
-  border-color: rgba(0,168,255,.4);
-  box-shadow: 0 30px 60px rgba(0,0,0,.5), 0 0 40px rgba(0,168,255,.15);
-}
-.game-card:hover::before { opacity: 1; }
-
-/* First card — featured, spans 2 rows conceptually */
-.game-card.featured {
-  grid-row: span 1;
-}
-
-.game-thumb {
-  position: relative; overflow: hidden;
-  height: 220px;
-}
-.game-thumb-bg {
-  width: 100%; height: 100%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 5rem;
-  transition: transform .5s cubic-bezier(.4,0,.2,1);
-  position: relative;
-}
-.game-card:hover .game-thumb-bg { transform: scale(1.05); }
-
-/* Game 1 — TVM Bus */
-.thumb-tvm {
-  background: linear-gradient(135deg, #0a1628 0%, #0d2040 50%, #0a1628 100%);
-}
-.thumb-tvm-svg {
-  position: absolute; inset: 0;
-  background:
-    radial-gradient(ellipse at 30% 50%, rgba(0,168,255,.15) 0%, transparent 60%),
-    radial-gradient(ellipse at 70% 80%, rgba(255,106,0,.1) 0%, transparent 50%);
-}
-/* Game 2 — Oye Chor */
-.thumb-chor {
-  background: linear-gradient(135deg, #1a0a0a 0%, #2d1010 50%, #1a0a0a 100%);
-}
-.thumb-chor-svg {
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse at 50% 40%, rgba(255,60,57,.12) 0%, transparent 65%);
-}
-/* Game 3 — Yakshiyugam */
-.thumb-yak {
-  background: linear-gradient(135deg, #050a0a 0%, #081818 50%, #050a0a 100%);
-}
-.thumb-yak-svg {
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse at 50% 40%, rgba(0,200,150,.1) 0%, transparent 65%);
-}
-
-.game-status {
-  position: absolute; top: 14px; right: 14px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .62rem; font-weight: 500;
-  letter-spacing: .15em; text-transform: uppercase;
-  padding: 4px 12px; border-radius: 20px;
-  z-index: 2;
-}
-.status-soon  { background: rgba(255,202,40,.15); border: 1px solid rgba(255,202,40,.35); color: var(--gold); }
-.status-dev   { background: rgba(0,168,255,.12);  border: 1px solid rgba(0,168,255,.3);   color: var(--blue); }
-.status-later { background: rgba(255,106,0,.1);   border: 1px solid rgba(255,106,0,.25);  color: var(--orange); }
-
-.game-card-body {
-  padding: 28px 28px 32px;
-  position: relative; z-index: 2;
-}
-.game-platform {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .6rem; letter-spacing: .2em;
-  color: var(--muted); text-transform: uppercase;
-  margin-bottom: 8px;
-}
-.game-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.8rem; letter-spacing: .08em;
-  margin-bottom: 10px; color: var(--text);
-  transition: color .3s;
-}
-.game-card:hover .game-title { color: var(--blue); }
-.game-desc {
-  font-size: .85rem; line-height: 1.7;
-  color: var(--muted); margin-bottom: 20px;
-}
-.game-features {
-  list-style: none; display: flex; flex-direction: column; gap: 6px;
-  margin-bottom: 28px;
-}
-.game-features li {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .7rem; color: var(--muted);
-  display: flex; align-items: center; gap: 8px;
-}
-.game-features li::before {
-  content: '→'; color: var(--blue); flex-shrink: 0;
-}
-.game-card:nth-child(2) .game-features li::before { color: var(--red); }
-.game-card:nth-child(3) .game-features li::before { color: #00c896; }
-
-.game-footer-row {
-  display: flex; align-items: center; justify-content: space-between;
-  border-top: 1px solid var(--border); padding-top: 20px;
-}
-.game-launch {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .65rem; color: var(--muted); letter-spacing: .1em;
-}
-.game-launch strong { color: var(--gold); }
-
-.btn-card {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: .85rem; letter-spacing: .15em;
-  padding: 8px 22px;
-  background: transparent;
-  color: var(--blue);
-  border: 1px solid rgba(0,168,255,.3);
-  border-radius: 3px; cursor: pointer;
-  transition: all .2s; text-decoration: none; display: inline-block;
-}
-.btn-card:hover {
-  background: rgba(0,168,255,.1);
-  border-color: var(--blue);
-  box-shadow: var(--glow-b);
-}
-.game-card:nth-child(2) .btn-card { color: var(--red); border-color: rgba(255,61,87,.3); }
-.game-card:nth-child(2) .btn-card:hover { background: rgba(255,61,87,.1); border-color: var(--red); box-shadow: 0 0 20px rgba(255,61,87,.3); }
-.game-card:nth-child(3) .btn-card { color: #00c896; border-color: rgba(0,200,150,.3); }
-.game-card:nth-child(3) .btn-card:hover { background: rgba(0,200,150,.1); border-color: #00c896; box-shadow: 0 0 20px rgba(0,200,150,.3); }
-
-/* ═══════════════════════════════════════════════
-   WORK / GALLERY
-═══════════════════════════════════════════════ */
-#work {
-  padding: 120px clamp(20px,5vw,60px);
-  background: var(--panel);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-.work-inner { max-width: 1300px; margin: 0 auto; }
-.work-header { margin-bottom: 56px; }
-
-.gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(2, 220px);
-  gap: 16px;
-}
-.gallery-item {
-  border-radius: 8px; overflow: hidden;
-  position: relative;
-  border: 1px solid var(--border);
-  cursor: pointer;
-  transition: all .4s;
-}
-.gallery-item:first-child  { grid-column: span 2; }
-.gallery-item:nth-child(5) { grid-column: span 2; }
-
-.gallery-bg {
-  width: 100%; height: 100%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 3rem;
-  transition: transform .5s;
-  position: relative;
-}
-.gallery-item:hover .gallery-bg { transform: scale(1.08); }
-.gallery-item:hover { border-color: rgba(0,168,255,.4); }
-
-.gallery-overlay {
-  position: absolute; inset: 0;
-  background: linear-gradient(to top, rgba(3,5,10,.9) 0%, transparent 60%);
-  display: flex; align-items: flex-end; padding: 20px;
-  opacity: 0; transition: opacity .3s;
-}
-.gallery-item:hover .gallery-overlay { opacity: 1; }
-.gallery-caption {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .7rem; letter-spacing: .1em; color: var(--text);
-}
-.gallery-caption strong { color: var(--blue); display: block; margin-bottom: 2px; font-size: .78rem; }
-
-/* Gallery item backgrounds */
-.gb-1 { background: linear-gradient(135deg,#060f1e,#0d2040); }
-.gb-2 { background: linear-gradient(135deg,#1a0d06,#2d1800); }
-.gb-3 { background: linear-gradient(135deg,#06111a,#0a1e2e); }
-.gb-4 { background: linear-gradient(135deg,#0a0606,#1a0a0a); }
-.gb-5 { background: linear-gradient(135deg,#060a0f,#0d151e); }
-.gb-6 { background: linear-gradient(135deg,#05080a,#0a1010); }
-
-/* ═══════════════════════════════════════════════
-   TIMELINE / ROADMAP
-═══════════════════════════════════════════════ */
-#roadmap {
-  padding: 120px clamp(20px,5vw,60px);
-  max-width: 900px; margin: 0 auto;
-}
-.timeline {
-  position: relative;
-  margin-top: 64px;
-  padding-left: 40px;
-}
-.timeline::before {
-  content: '';
-  position: absolute; left: 7px; top: 0; bottom: 0;
-  width: 1px;
-  background: linear-gradient(to bottom, var(--blue), var(--orange), transparent);
-}
-.tl-item {
-  position: relative; margin-bottom: 48px;
-}
-.tl-item:last-child { margin-bottom: 0; }
-.tl-dot {
-  position: absolute; left: -38px; top: 4px;
-  width: 14px; height: 14px;
-  border-radius: 50%;
-  background: var(--blue);
-  border: 2px solid var(--black);
-  box-shadow: 0 0 12px rgba(0,168,255,.5);
-}
-.tl-dot.orange { background: var(--orange); box-shadow: 0 0 12px rgba(255,106,0,.5); }
-.tl-dot.muted  { background: var(--muted);  box-shadow: none; }
-.tl-date {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .65rem; letter-spacing: .2em;
-  color: var(--blue); text-transform: uppercase;
-  margin-bottom: 6px;
-}
-.tl-date.orange { color: var(--orange); }
-.tl-date.muted  { color: var(--muted); }
-.tl-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.5rem; letter-spacing: .08em;
-  margin-bottom: 6px;
-}
-.tl-desc {
-  font-size: .87rem; color: var(--muted); line-height: 1.7;
-}
-
-/* ═══════════════════════════════════════════════
-   CONTACT
-═══════════════════════════════════════════════ */
-#contact {
-  padding: 120px clamp(20px,5vw,60px);
-  background: var(--panel);
-  border-top: 1px solid var(--border);
-}
-.contact-inner {
-  max-width: 1200px; margin: 0 auto;
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 80px; align-items: start;
-}
-.contact-left .section-desc { margin-bottom: 40px; }
-
-.contact-links { display: flex; flex-direction: column; gap: 16px; }
-.contact-link {
-  display: flex; align-items: center; gap: 16px;
-  padding: 18px 22px;
-  background: rgba(255,255,255,.03);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  text-decoration: none;
-  transition: all .3s;
-  color: var(--text);
-}
-.contact-link:hover {
-  border-color: rgba(0,168,255,.35);
-  background: rgba(0,168,255,.05);
-  transform: translateX(6px);
-  box-shadow: var(--glow-b);
-}
-.cl-icon {
-  width: 40px; height: 40px;
-  background: rgba(0,168,255,.1);
-  border: 1px solid rgba(0,168,255,.2);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.1rem; flex-shrink: 0;
-}
-.cl-info { flex: 1; }
-.cl-platform {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .62rem; letter-spacing: .15em;
-  color: var(--muted); text-transform: uppercase;
-  margin-bottom: 2px;
-}
-.cl-value { font-size: .9rem; font-weight: 600; }
-.cl-arrow {
-  font-size: 1rem; color: var(--muted);
-  transition: color .3s, transform .3s;
-}
-.contact-link:hover .cl-arrow { color: var(--blue); transform: translateX(4px); }
-
-/* Contact form */
-.contact-form {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 40px;
-  backdrop-filter: blur(12px);
-  position: relative; overflow: hidden;
-}
-.contact-form::before {
-  content: ''; position: absolute;
-  top: 0; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, transparent, var(--orange), var(--blue), transparent);
-}
-.form-row { margin-bottom: 20px; }
-.form-row label {
-  display: block;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .65rem; letter-spacing: .15em;
-  color: var(--muted); text-transform: uppercase;
-  margin-bottom: 8px;
-}
-.form-row input, .form-row textarea, .form-row select {
-  width: 100%; padding: 13px 16px;
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.09);
-  border-radius: 5px;
-  color: var(--text);
-  font-family: 'Syne', sans-serif; font-size: .9rem;
-  transition: border-color .2s, box-shadow .2s;
-  resize: none; outline: none;
-  -webkit-appearance: none;
-}
-.form-row input:focus, .form-row textarea:focus, .form-row select:focus {
-  border-color: rgba(0,168,255,.4);
-  box-shadow: 0 0 0 3px rgba(0,168,255,.08);
-}
-.form-row textarea { height: 130px; }
-.form-row select option { background: var(--panel); }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.btn-submit {
-  width: 100%; padding: 16px;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.1rem; letter-spacing: .2em;
-  background: var(--orange);
-  color: white; border: none; border-radius: 4px; cursor: pointer;
-  transition: all .2s;
-  box-shadow: 0 0 30px rgba(255,106,0,.25);
-  position: relative; overflow: hidden;
-}
-.btn-submit:hover { transform: translateY(-2px); box-shadow: 0 0 50px rgba(255,106,0,.45); }
-
-/* ═══════════════════════════════════════════════
-   FOOTER
-═══════════════════════════════════════════════ */
-footer {
-  padding: 60px clamp(20px,5vw,72px) 32px;
-  border-top: 1px solid var(--border);
-}
-.footer-inner {
-  max-width: 1300px; margin: 0 auto;
-  display: flex; justify-content: space-between; align-items: center;
-  flex-wrap: wrap; gap: 24px;
-  padding-bottom: 32px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 28px;
-}
-.footer-logo {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.4rem; letter-spacing: .18em; color: var(--text);
-  display: flex; align-items: center; gap: 10px;
-}
-.footer-logo-mark {
-  width: 28px; height: 28px; background: var(--blue);
-  border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 14px;
-  box-shadow: 0 0 16px rgba(0,168,255,.35);
-}
-.footer-links { display: flex; gap: 28px; flex-wrap: wrap; }
-.footer-links a {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .65rem; letter-spacing: .15em;
-  color: var(--muted); text-decoration: none; text-transform: uppercase;
-  transition: color .2s;
-}
-.footer-links a:hover { color: var(--blue); }
-.footer-copy {
-  max-width: 1300px; margin: 0 auto;
-  display: flex; justify-content: space-between; align-items: center;
-  flex-wrap: wrap; gap: 12px;
-}
-.footer-copy p {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: .62rem; color: var(--muted); letter-spacing: .1em;
-}
-.footer-copy span { color: var(--blue); }
-
-/* ═══════════════════════════════════════════════
-   RESPONSIVE
-═══════════════════════════════════════════════ */
-@media (max-width: 1024px) {
-  .games-grid { grid-template-columns: 1fr 1fr; }
-  #about { grid-template-columns: 1fr; gap: 48px; padding: 80px clamp(20px,5vw,60px); }
-  .gallery-grid { grid-template-rows: repeat(3, 180px); }
-}
-@media (max-width: 768px) {
-  .games-grid { grid-template-columns: 1fr; }
-  .gallery-grid { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 160px); }
-  .gallery-item:first-child, .gallery-item:nth-child(5) { grid-column: span 1; }
-  .stats-inner { grid-template-columns: repeat(2,1fr); }
-  .stat-item:nth-child(2) { border-right: none; }
-  .contact-inner { grid-template-columns: 1fr; gap: 48px; }
-  .form-grid { grid-template-columns: 1fr; }
-  .nav-links, .nav-cta { display: none; }
-  .hamburger { display: flex; }
-  .footer-inner { flex-direction: column; align-items: flex-start; gap: 20px; }
-  #roadmap { padding: 80px clamp(20px,5vw,40px); }
-}
-@media (max-width: 480px) {
-  .gallery-grid { grid-template-columns: 1fr; grid-template-rows: auto; }
-  .gallery-item { height: 150px; }
-  .stats-inner { grid-template-columns: 1fr 1fr; }
-  .hero-buttons { flex-direction: column; align-items: center; }
-}
-
-/* ═══════════════════════════════════════════════
-   MISC
-═══════════════════════════════════════════════ */
-.accent-blue { color: var(--blue); }
-.accent-orange { color: var(--orange); }
-::selection { background: rgba(0,168,255,.25); color: var(--text); }
-
-/* Progress bar on top */
-#progress-bar {
-  position: fixed; top: 0; left: 0;
-  height: 2px; background: linear-gradient(90deg, var(--blue), var(--cyan));
-  z-index: 501; width: 0%;
-  transition: width .1s;
-  box-shadow: 0 0 8px rgba(0,168,255,.5);
-}
-
-/* Back to top */
-#back-top {
-  position: fixed; bottom: 32px; right: 32px;
-  width: 44px; height: 44px;
-  background: rgba(0,168,255,.15);
-  border: 1px solid rgba(0,168,255,.3);
-  border-radius: 50%; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.1rem; color: var(--blue);
-  opacity: 0; transform: translateY(10px);
-  transition: all .3s; z-index: 400;
-}
-#back-top.visible { opacity: 1; transform: translateY(0); }
-#back-top:hover { background: rgba(0,168,255,.25); box-shadow: var(--glow-b); }
+/* RESPONSIVE */
+@media(max-width:1024px){.gg{grid-template-columns:1fr 1fr}#about{grid-template-columns:1fr;gap:48px;padding:80px clamp(20px,5vw,60px)}.gg2{grid-template-rows:repeat(3,180px)}.dp-strip{grid-template-columns:repeat(2,1fr)}.dp-meters{grid-template-columns:1fr 1fr}}
+@media(max-width:768px){.gg{grid-template-columns:1fr}.gg2{grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,160px)}.gi:first-child,.gi:nth-child(5){grid-column:span 1}.stats-inner{grid-template-columns:repeat(2,1fr)}.stat-item:nth-child(2){border-right:none}.ci{grid-template-columns:1fr;gap:48px}.fg{grid-template-columns:1fr}.nav-links,.nav-cta{display:none}.hamburger{display:flex}.fi{flex-direction:column;align-items:flex-start}.dp-meters{grid-template-columns:1fr}}
+@media(max-width:480px){.dp-strip{grid-template-columns:1fr 1fr}.hero-btns{flex-direction:column;align-items:center}}
 </style>
 </head>
 <body>
 
 <!-- LOADER -->
 <div id="loader">
-  <div class="loader-logo">TRIDEVA<span>.</span></div>
+  <div class="loader-logo-wrap">
+    <img src="1752051798430.png" class="loader-logo-img" alt="Trideva" onerror="this.style.display='none'"/>
+    <div class="loader-text">TRIDEVA<span>.</span></div>
+  </div>
   <div class="loader-bar-wrap"><div class="loader-bar"></div></div>
-  <div class="loader-pct" id="loader-pct">LOADING... 0%</div>
+  <div class="loader-pct" id="lpct">LOADING... 0%</div>
 </div>
 
 <!-- CURSOR -->
 <div id="cursor"></div>
 <div id="cursor-ring"></div>
-
-<!-- PROGRESS BAR -->
 <div id="progress-bar"></div>
-
-<!-- BACK TO TOP -->
 <div id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</div>
 
-<!-- ── NAVBAR ── -->
+<!-- LIGHTBOX -->
+<div id="lightbox" onclick="lbBg(event)">
+  <div class="lb-close" onclick="lbClose()">✕</div>
+  <div class="lb-nav lb-prev" onclick="lbNav(-1)">‹</div>
+  <img id="lb-img" class="lb-img" src="" alt=""/>
+  <div class="lb-nav lb-next" onclick="lbNav(1)">›</div>
+  <div class="lb-cap" id="lb-cap"></div>
+</div>
+
+<!-- NAVBAR -->
 <nav id="navbar">
   <a href="#hero" class="nav-logo">
-    <div class="nav-logo-mark">🎮</div>
+    <img src="1752051798430.png" class="nav-logo-img" alt="Trideva" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+    <div class="nav-logo-fb">🎮</div>
     TRIDEVA
   </a>
   <ul class="nav-links">
     <li><a href="#about">About</a></li>
     <li><a href="#games">Games</a></li>
+    <li><a href="#devprogress">Dev Log</a></li>
     <li><a href="#work">Work</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contact">Contact</a></li>
   </ul>
   <a href="#contact" class="nav-cta">Get In Touch</a>
-  <div class="hamburger" id="hamburger" onclick="toggleMenu()">
-    <span></span><span></span><span></span>
-  </div>
+  <div class="hamburger" id="ham" onclick="toggleMenu()"><span></span><span></span><span></span></div>
 </nav>
-<div class="mobile-menu" id="mobileMenu">
+<div class="mobile-menu" id="mmenu">
   <a href="#about" onclick="toggleMenu()">About</a>
   <a href="#games" onclick="toggleMenu()">Games</a>
+  <a href="#devprogress" onclick="toggleMenu()">Dev Log</a>
   <a href="#work" onclick="toggleMenu()">Work</a>
   <a href="#roadmap" onclick="toggleMenu()">Roadmap</a>
   <a href="#contact" onclick="toggleMenu()">Contact</a>
 </div>
 
-<!-- ═══════════════════════════════════════════════
-     HERO
-═══════════════════════════════════════════════ -->
+<!-- ══ HERO ══ -->
 <section id="hero">
   <canvas id="hero-canvas"></canvas>
   <div class="hero-grid"></div>
-  <div class="hero-glow-center"></div>
-  <div class="hero-glow-orange"></div>
+  <div class="hero-gc"></div>
+  <div class="hero-go"></div>
   <div class="scanlines"></div>
-
-  <div class="hero-eyebrow">
-    <span class="eyebrow-dot"></span>
-    Indie Game Studio · Kerala, India
-  </div>
-
-  <h1 class="hero-title">
-    <span class="t-outline">TRIDEVA</span><br>
-    <span class="t-blue">INTERACTIVE</span>
-  </h1>
-
+  <div class="hero-eyebrow"><span class="eyebrow-dot"></span>Indie Game Studio · Kerala, India</div>
+  <img src="1752051798430.png" class="hero-logo-img" alt="Trideva Interactive" onerror="this.style.display='none'"/>
+  <h1 class="hero-title"><span class="t-outline">TRIDEVA</span><br><span class="t-blue">INTERACTIVE</span></h1>
   <div class="hero-sub">Building Realistic &amp; Immersive Games</div>
-
-  <div class="typewriter-wrap">
-    <span id="typewriter"></span>
+  <div class="tw-wrap"><span id="tw"></span></div>
+  <div class="hero-btns">
+    <a href="#games" class="btn-p">Explore Games</a>
+    <a href="#devprogress" class="btn-g">Dev Progress</a>
   </div>
-
-  <div class="hero-buttons">
-    <a href="#games" class="btn-primary">Explore Games</a>
-    <a href="#about" class="btn-ghost">Our Story</a>
-  </div>
-
-  <div class="scroll-indicator">
-    <div class="scroll-mouse"><div class="scroll-mouse-dot"></div></div>
+  <div class="scroll-ind">
+    <div class="scroll-mouse"><div class="scroll-dot"></div></div>
     <span>Scroll</span>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════
-     STATS
-═══════════════════════════════════════════════ -->
+<!-- ══ STATS ══ -->
 <div id="stats">
   <div class="stats-inner">
-    <div class="stat-item reveal">
-      <div class="stat-num" data-count="3">0</div>
-      <div class="stat-label">Games in Dev</div>
-    </div>
-    <div class="stat-item reveal" style="transition-delay:.1s">
-      <div class="stat-num" data-count="1">0</div>
-      <div class="stat-label">Solo Developer</div>
-    </div>
-    <div class="stat-item reveal" style="transition-delay:.2s">
-      <div class="stat-num" data-count="2026">0</div>
-      <div class="stat-label">First Launch Year</div>
-    </div>
-    <div class="stat-item reveal" style="transition-delay:.3s">
-      <div class="stat-num" data-count="100">0</div>
-      <div class="stat-label">% Passion</div>
-    </div>
+    <div class="stat-item reveal"><div class="stat-num" data-count="3">0</div><div class="stat-label">Games in Dev</div></div>
+    <div class="stat-item reveal" style="transition-delay:.1s"><div class="stat-num" data-count="1">0</div><div class="stat-label">Solo Developer</div></div>
+    <div class="stat-item reveal" style="transition-delay:.2s"><div class="stat-num" data-count="2026">0</div><div class="stat-label">First Launch Year</div></div>
+    <div class="stat-item reveal" style="transition-delay:.3s"><div class="stat-num" data-count="100">0</div><div class="stat-label">% Passion</div></div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════
-     ABOUT
-═══════════════════════════════════════════════ -->
+<!-- ══ ABOUT ══ -->
 <section>
   <div id="about">
-    <div class="about-left reveal-left">
-      <div class="section-eyebrow">About Us</div>
-      <h2 class="section-title">Crafted From the<br><span class="accent-blue">Heart of Kerala</span></h2>
-      <p class="section-desc">
-        Trideva Interactive is an indie game studio led by a solo BCA student developer,
-        building games rooted in Indian culture, real-world environments, and authentic storytelling.
-        From Kerala's bustling city roads to its spine-chilling folklore — we craft experiences that resonate.
-      </p>
-      <div class="about-badges">
-        <span class="badge">Unreal Engine 4</span>
-        <span class="badge">Blender</span>
-        <span class="badge orange">Mobile First</span>
-        <span class="badge orange">PC Gaming</span>
-        <span class="badge">Game Design</span>
-        <span class="badge">Storytelling</span>
+    <div class="about-left rl">
+      <div class="sey">About Us</div>
+      <h2 class="stitle">Crafted From the<br><span style="color:var(--blue)">Heart of Kerala</span></h2>
+      <p class="sdesc">Trideva Interactive is an indie game studio led by a solo BCA student developer, building games rooted in Indian culture, real-world environments, and authentic storytelling. From Kerala's bustling city roads to its spine-chilling folklore — we craft experiences that resonate.</p>
+      <div class="badges">
+        <span class="bdg">Unreal Engine 4</span><span class="bdg">Blender</span>
+        <span class="bdg or">Mobile First</span><span class="bdg or">PC Gaming</span>
+        <span class="bdg">Game Design</span><span class="bdg">Storytelling</span>
       </div>
     </div>
-    <div class="about-right reveal-right">
-      <div class="skill-row">
-        <div class="skill-info">
-          <span class="skill-name">Unreal Engine 4</span>
-          <span class="skill-pct">88%</span>
-        </div>
-        <div class="skill-track"><div class="skill-fill" data-width="88"></div></div>
-      </div>
-      <div class="skill-row">
-        <div class="skill-info">
-          <span class="skill-name">Blender 3D</span>
-          <span class="skill-pct">82%</span>
-        </div>
-        <div class="skill-track"><div class="skill-fill orange" data-width="82"></div></div>
-      </div>
-      <div class="skill-row">
-        <div class="skill-info">
-          <span class="skill-name">Game Design</span>
-          <span class="skill-pct">90%</span>
-        </div>
-        <div class="skill-track"><div class="skill-fill cyan" data-width="90"></div></div>
-      </div>
-      <div class="skill-row">
-        <div class="skill-info">
-          <span class="skill-name">Mobile Optimization</span>
-          <span class="skill-pct">75%</span>
-        </div>
-        <div class="skill-track"><div class="skill-fill gold" data-width="75"></div></div>
-      </div>
-      <div class="skill-row">
-        <div class="skill-info">
-          <span class="skill-name">World Building</span>
-          <span class="skill-pct">85%</span>
-        </div>
-        <div class="skill-track"><div class="skill-fill" data-width="85"></div></div>
-      </div>
+    <div class="about-right rr">
+      <div class="sk-row"><div class="sk-info"><span class="sk-name">Unreal Engine 4</span><span class="sk-pct">88%</span></div><div class="sk-track"><div class="sk-fill" data-width="88"></div></div></div>
+      <div class="sk-row"><div class="sk-info"><span class="sk-name">Blender 3D</span><span class="sk-pct">82%</span></div><div class="sk-track"><div class="sk-fill or" data-width="82"></div></div></div>
+      <div class="sk-row"><div class="sk-info"><span class="sk-name">Game Design</span><span class="sk-pct">90%</span></div><div class="sk-track"><div class="sk-fill cy" data-width="90"></div></div></div>
+      <div class="sk-row"><div class="sk-info"><span class="sk-name">Mobile Optimization</span><span class="sk-pct">75%</span></div><div class="sk-track"><div class="sk-fill go" data-width="75"></div></div></div>
+      <div class="sk-row"><div class="sk-info"><span class="sk-name">World Building</span><span class="sk-pct">85%</span></div><div class="sk-track"><div class="sk-fill" data-width="85"></div></div></div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════
-     GAMES
-═══════════════════════════════════════════════ -->
-<section id="games" style="padding:120px clamp(20px,5vw,60px);max-width:1300px;margin:0 auto;">
-  <div class="games-header">
-    <div>
-      <div class="section-eyebrow">Our Games</div>
-      <h2 class="section-title">Titles in Development</h2>
+<!-- ══ GAMES ══ -->
+<section id="games" style="background:var(--panel);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+  <div class="gw">
+    <div class="gh">
+      <div>
+        <div class="sey">Our Games</div>
+        <h2 class="stitle">Titles in Development</h2>
+      </div>
+      <p class="sdesc" style="max-width:360px">Three original games rooted in Indian culture — a simulator, a runner, and a horror adventure.</p>
     </div>
-    <p class="section-desc" style="max-width:360px;">Three original games rooted in Indian culture — a simulator, a runner, and a horror adventure.</p>
+    <div class="gg">
+
+      <!-- TVM BUS SIM -->
+      <div class="gc reveal">
+        <div class="gthumb">
+          <img src="Copilot_20250709_120414.png" class="gcover" alt="TVM Bus Simulator" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+          <div class="gfb fb-tvm" style="display:none"><span style="filter:drop-shadow(0 0 20px rgba(0,168,255,.5))">🚌</span></div>
+          <div class="gto"></div>
+          <div class="gstatus ss">May 2026</div>
+        </div>
+        <div class="gbody">
+          <div class="gplat">PC · Android · iOS</div>
+          <div class="gtitle">TVM Bus Simulator</div>
+          <p class="gdesc">Experience Thiruvananthapuram's roads with unparalleled realism. Drive authentic KSRTC routes with real bus physics, NPC passengers, and Kerala urban environments.</p>
+          <ul class="gfeat">
+            <li>Real-world routes — Vizhinjam to East Fort</li>
+            <li>NPC passengers &amp; conductor system</li>
+            <li>Dynamic weather &amp; day-night cycle</li>
+            <li>Authentic Kerala sound design</li>
+          </ul>
+          <div class="gfoot"><div class="glaunch">Launch: <strong>12 MAY 2026</strong></div><a href="mailto:malayaleegamer07@gmail.com" class="btn-c">View Details</a></div>
+        </div>
+      </div>
+
+      <!-- OYE CHOR -->
+      <div class="gc reveal" style="transition-delay:.12s">
+        <div class="gthumb">
+          <img src="Copilot_20250709_121423.png" class="gcover" alt="Oye Chor" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+          <div class="gfb fb-chor" style="display:none"><span style="filter:drop-shadow(0 0 20px rgba(255,61,87,.5))">🏃</span></div>
+          <div class="gto"></div>
+          <div class="gstatus sl">Coming Soon</div>
+        </div>
+        <div class="gbody">
+          <div class="gplat">PC · Android</div>
+          <div class="gtitle">Oye Chor</div>
+          <p class="gdesc">Endless runner through Indian streets — you're the thief, police on your tail. Punjabi voiceovers, power-ups, and relentless chase gameplay.</p>
+          <ul class="gfeat">
+            <li>Fast-paced police chase gameplay</li>
+            <li>Punjabi voice acting &amp; soundtrack</li>
+            <li>Increasing difficulty &amp; leaderboards</li>
+            <li>Unique power-up abilities</li>
+          </ul>
+          <div class="gfoot"><div class="glaunch">Launch: <strong>After TVM Sim</strong></div><a href="mailto:malayaleegamer07@gmail.com" class="btn-c">View Details</a></div>
+        </div>
+      </div>
+
+      <!-- YAKSHIYUGAM -->
+      <div class="gc reveal" style="transition-delay:.24s">
+        <div class="gthumb">
+          <img src="ChatGPT Image Jul 9, 2025, 03_48_49 PM.png" class="gcover" alt="Yakshiyugam" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+          <div class="gfb fb-yak" style="display:none"><span style="filter:drop-shadow(0 0 20px rgba(0,200,150,.5))">👁️</span></div>
+          <div class="gto"></div>
+          <div class="gstatus sl">Coming Soon</div>
+        </div>
+        <div class="gbody">
+          <div class="gplat">PC · Mobile (Free)</div>
+          <div class="gtitle">Yakshiyugam</div>
+          <p class="gdesc">A spine-chilling horror adventure deep in rural Kerala folklore. Supernatural mystery, ancient demons, and a story that will haunt you long after the credits roll.</p>
+          <ul class="gfeat">
+            <li>Story-driven Kerala folklore horror</li>
+            <li>Dark atmospheric environments</li>
+            <li>Free mobile · Paid PC release</li>
+            <li>Original Malayalam voice acting</li>
+          </ul>
+          <div class="gfoot"><div class="glaunch">Launch: <strong>TBA 2026</strong></div><a href="mailto:malayaleegamer07@gmail.com" class="btn-c">View Details</a></div>
+        </div>
+      </div>
+
+    </div>
   </div>
+</section>
 
-  <div class="games-grid">
+<!-- ══════════════════════════════════════════
+     DEV PROGRESS — TVM BUS SIMULATOR
+══════════════════════════════════════════ -->
+<section id="devprogress">
+  <div class="dp-inner">
 
-    <!-- GAME 1: TVM Bus Simulator -->
-    <div class="game-card reveal" style="transition-delay:0s">
-      <div class="game-thumb">
-        <div class="game-thumb-bg thumb-tvm">
-          <div class="thumb-tvm-svg"></div>
-          <span style="position:relative;z-index:1;font-size:4.5rem;filter:drop-shadow(0 0 20px rgba(0,168,255,.5))">🚌</span>
-        </div>
-        <div class="game-status status-soon">May 2026</div>
+    <div class="dp-head reveal">
+      <div>
+        <div class="sey">Development Log</div>
+        <h2 class="stitle">TVM Bus Simulator<br><span style="color:var(--blue)">Build Progress</span></h2>
+        <p class="sdesc">Real screenshots from the active Unreal Engine 4 build. Click any image to expand. Work in progress — July 2025.</p>
       </div>
-      <div class="game-card-body">
-        <div class="game-platform">PC · Android · iOS</div>
-        <div class="game-title">TVM Bus Simulator</div>
-        <p class="game-desc">Experience Thiruvananthapuram's roads with unparalleled realism. Drive authentic Kerala bus routes with real physics, passengers, and urban environment.</p>
-        <ul class="game-features">
-          <li>Real-world routes — Vizhinjam to East Fort</li>
-          <li>NPC passengers &amp; conductor system</li>
-          <li>Dynamic weather &amp; day-night cycle</li>
-          <li>Authentic Kerala sound design</li>
-        </ul>
-        <div class="game-footer-row">
-          <div class="game-launch">Launch: <strong>12 MAY 2026</strong></div>
-          <a href="mailto:malayaleegamer07@gmail.com" class="btn-card">View Details</a>
-        </div>
+      <div class="build-tag">Build <span>0.4.2</span> &nbsp;·&nbsp; July 2025 &nbsp;·&nbsp; UE4</div>
+    </div>
+
+    <!-- MAIN FEATURED SCREENSHOT -->
+    <div class="dp-hero reveal" onclick="lbOpen(0)">
+      <div class="dp-live">🔴 LIVE BUILD</div>
+      <img src="Screenshot 2025-07-31 183928.png" alt="TVM Bus Simulator UE4 Build"
+           onerror="this.parentElement.style.background='linear-gradient(135deg,#0a1628,#0d2040)';this.style.display='none'"/>
+      <div class="dp-hero-label">
+        <strong>Road &amp; Environment System — Unreal Engine 4</strong>
+        Early road layout with bus physics and Kerala environment assets · Click to expand
       </div>
     </div>
 
-    <!-- GAME 2: Oye Chor -->
-    <div class="game-card reveal" style="transition-delay:.12s">
-      <div class="game-thumb">
-        <div class="game-thumb-bg thumb-chor">
-          <div class="thumb-chor-svg"></div>
-          <span style="position:relative;z-index:1;font-size:4.5rem;filter:drop-shadow(0 0 20px rgba(255,61,87,.5))">🏃</span>
-        </div>
-        <div class="game-status status-later">Coming Soon</div>
+    <!-- 4 THUMBNAIL STRIP -->
+    <div class="dp-strip reveal">
+      <div class="dp-thumb" onclick="lbOpen(1)">
+        <img src="Screenshot 2025-07-31 184004.png" alt="Dev Screenshot 2" onerror="this.parentElement.style.background='#0d1520';this.style.display='none'"/>
+        <div class="dp-tov">🔍</div>
+        <div class="dp-tlabel">Environment Detail</div>
       </div>
-      <div class="game-card-body">
-        <div class="game-platform">PC · Android</div>
-        <div class="game-title">Oye Chor</div>
-        <p class="game-desc">Endless runner through Indian streets — you're the thief, the police are on your tail. Punjabi voiceovers, power-ups, and relentless pace.</p>
-        <ul class="game-features">
-          <li>Fast-paced police chase gameplay</li>
-          <li>Punjabi voice acting &amp; soundtrack</li>
-          <li>Increasing difficulty &amp; leaderboards</li>
-          <li>Unique power-up abilities</li>
-        </ul>
-        <div class="game-footer-row">
-          <div class="game-launch">Launch: <strong>After TVM Sim</strong></div>
-          <a href="mailto:malayaleegamer07@gmail.com" class="btn-card">View Details</a>
-        </div>
+      <div class="dp-thumb" onclick="lbOpen(2)">
+        <img src="Screenshot 2025-07-31 184226.png" alt="Dev Screenshot 3" onerror="this.parentElement.style.background='#0d1520';this.style.display='none'"/>
+        <div class="dp-tov">🔍</div>
+        <div class="dp-tlabel">Bus Placement</div>
+      </div>
+      <div class="dp-thumb" onclick="lbOpen(3)">
+        <img src="Screenshot 2025-07-31 184622.png" alt="Dev Screenshot 4" onerror="this.parentElement.style.background='#0d1520';this.style.display='none'"/>
+        <div class="dp-tov">🔍</div>
+        <div class="dp-tlabel">Route Testing</div>
+      </div>
+      <div class="dp-thumb" onclick="lbOpen(4)">
+        <img src="Screenshot 2025-07-31 184840.png" alt="Dev Screenshot 5" onerror="this.parentElement.style.background='#0d1520';this.style.display='none'"/>
+        <div class="dp-tov">🔍</div>
+        <div class="dp-tlabel">Lighting &amp; FX</div>
       </div>
     </div>
 
-    <!-- GAME 3: Yakshiyugam -->
-    <div class="game-card reveal" style="transition-delay:.24s">
-      <div class="game-thumb">
-        <div class="game-thumb-bg thumb-yak">
-          <div class="thumb-yak-svg"></div>
-          <span style="position:relative;z-index:1;font-size:4.5rem;filter:drop-shadow(0 0 20px rgba(0,200,150,.5))">👁️</span>
-        </div>
-        <div class="game-status status-later">Coming Soon</div>
-      </div>
-      <div class="game-card-body">
-        <div class="game-platform">PC · Mobile (Free)</div>
-        <div class="game-title">Yakshiyugam</div>
-        <p class="game-desc">A spine-chilling horror adventure deep in rural Kerala folklore. Supernatural mystery, ancient demons, and a story that will haunt you long after credits roll.</p>
-        <ul class="game-features">
-          <li>Story-driven Kerala folklore horror</li>
-          <li>Atmospheric dark environments</li>
-          <li>Free mobile, paid PC release</li>
-          <li>Original Malayalam voice acting</li>
-        </ul>
-        <div class="game-footer-row">
-          <div class="game-launch">Launch: <strong>TBA 2026</strong></div>
-          <a href="mailto:malayaleegamer07@gmail.com" class="btn-card">View Details</a>
-        </div>
-      </div>
+    <!-- PROGRESS METERS -->
+    <div class="dp-meters reveal">
+      <div class="dp-meter"><div class="dp-mlabel">Road &amp; Route System <span>78%</span></div><div class="mtrack"><div class="mfill mfb" data-width="78"></div></div></div>
+      <div class="dp-meter"><div class="dp-mlabel">Bus Physics &amp; Controls <span>85%</span></div><div class="mtrack"><div class="mfill mfo" data-width="85"></div></div></div>
+      <div class="dp-meter"><div class="dp-mlabel">Environment &amp; Assets <span>62%</span></div><div class="mtrack"><div class="mfill mfg" data-width="62"></div></div></div>
+      <div class="dp-meter"><div class="dp-mlabel">NPC Passenger System <span>40%</span></div><div class="mtrack"><div class="mfill mfb" data-width="40"></div></div></div>
+      <div class="dp-meter"><div class="dp-mlabel">Weather &amp; Day/Night <span>55%</span></div><div class="mtrack"><div class="mfill mfo" data-width="55"></div></div></div>
+      <div class="dp-meter"><div class="dp-mlabel">UI &amp; Audio Design <span>30%</span></div><div class="mtrack"><div class="mfill mfg" data-width="30"></div></div></div>
     </div>
 
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════
-     WORK / GALLERY
-═══════════════════════════════════════════════ -->
+<!-- ══ GALLERY ══ -->
 <section id="work">
-  <div class="work-inner">
-    <div class="work-header reveal">
-      <div class="section-eyebrow">Portfolio</div>
-      <h2 class="section-title">Development Work</h2>
-      <p class="section-desc">3D assets, environment design, and engine screenshots from active development.</p>
+  <div class="wi">
+    <div class="wh reveal">
+      <div class="sey">Portfolio</div>
+      <h2 class="stitle">Development Work</h2>
+      <p class="sdesc">3D assets, environment design, and engine screenshots from active development.</p>
     </div>
-    <div class="gallery-grid">
-      <div class="gallery-item reveal" style="transition-delay:.05s">
-        <div class="gallery-bg gb-1">
-          <span style="filter:drop-shadow(0 0 16px rgba(0,168,255,.6))">🚌</span>
-        </div>
-        <div class="gallery-overlay">
-          <div class="gallery-caption">
-            <strong>TVM Bus — 3D Model</strong>
-            Blender · High-poly bus asset
-          </div>
-        </div>
-      </div>
-      <div class="gallery-item reveal" style="transition-delay:.1s">
-        <div class="gallery-bg gb-2">
-          <span style="filter:drop-shadow(0 0 16px rgba(255,106,0,.5))">🏙️</span>
-        </div>
-        <div class="gallery-overlay">
-          <div class="gallery-caption">
-            <strong>East Fort Environment</strong>
-            UE4 · Kerala city block
-          </div>
-        </div>
-      </div>
-      <div class="gallery-item reveal" style="transition-delay:.15s">
-        <div class="gallery-bg gb-3">
-          <span style="filter:drop-shadow(0 0 16px rgba(0,229,255,.5))">🛣️</span>
-        </div>
-        <div class="gallery-overlay">
-          <div class="gallery-caption">
-            <strong>Road System — UE4</strong>
-            Procedural road &amp; traffic layout
-          </div>
-        </div>
-      </div>
-      <div class="gallery-item reveal" style="transition-delay:.2s">
-        <div class="gallery-bg gb-4">
-          <span style="filter:drop-shadow(0 0 16px rgba(255,61,87,.5))">🌙</span>
-        </div>
-        <div class="gallery-overlay">
-          <div class="gallery-caption">
-            <strong>Night Lighting Pass</strong>
-            UE4 · Volumetric fog &amp; neon
-          </div>
-        </div>
-      </div>
-      <div class="gallery-item reveal" style="transition-delay:.25s">
-        <div class="gallery-bg gb-5">
-          <span style="filter:drop-shadow(0 0 16px rgba(255,202,40,.5))">⛩️</span>
-        </div>
-        <div class="gallery-overlay">
-          <div class="gallery-caption">
-            <strong>Yakshiyugam — Temple</strong>
-            UE4 · Horror environment props
-          </div>
-        </div>
-      </div>
-      <div class="gallery-item reveal" style="transition-delay:.3s">
-        <div class="gallery-bg gb-6">
-          <span style="filter:drop-shadow(0 0 16px rgba(0,200,150,.5))">🌴</span>
-        </div>
-        <div class="gallery-overlay">
-          <div class="gallery-caption">
-            <strong>Kerala Foliage Pack</strong>
-            Blender · Tropical tree assets
-          </div>
-        </div>
-      </div>
+    <div class="gg2">
+      <div class="gi reveal"><div class="gbg gb1"><span style="filter:drop-shadow(0 0 16px rgba(0,168,255,.6))">🚌</span></div><div class="gov"><div class="gcap"><strong>TVM Bus — 3D Model</strong>Blender · High-poly KSRTC bus</div></div></div>
+      <div class="gi reveal" style="transition-delay:.08s"><div class="gbg gb2"><span style="filter:drop-shadow(0 0 16px rgba(255,106,0,.5))">🏙️</span></div><div class="gov"><div class="gcap"><strong>East Fort Environment</strong>UE4 · Kerala city block</div></div></div>
+      <div class="gi reveal" style="transition-delay:.14s"><div class="gbg gb3"><span style="filter:drop-shadow(0 0 16px rgba(0,229,255,.5))">🛣️</span></div><div class="gov"><div class="gcap"><strong>Road System — UE4</strong>Procedural road layout</div></div></div>
+      <div class="gi reveal" style="transition-delay:.18s"><div class="gbg gb4"><span style="filter:drop-shadow(0 0 16px rgba(255,61,87,.5))">🌙</span></div><div class="gov"><div class="gcap"><strong>Night Lighting Pass</strong>UE4 · Volumetric fog</div></div></div>
+      <div class="gi reveal" style="transition-delay:.24s"><div class="gbg gb5"><span style="filter:drop-shadow(0 0 16px rgba(255,202,40,.5))">⛩️</span></div><div class="gov"><div class="gcap"><strong>Yakshiyugam — Temple</strong>UE4 · Horror props</div></div></div>
+      <div class="gi reveal" style="transition-delay:.3s"><div class="gbg gb6"><span style="filter:drop-shadow(0 0 16px rgba(0,200,150,.5))">🌴</span></div><div class="gov"><div class="gcap"><strong>Kerala Foliage Pack</strong>Blender · Tropical assets</div></div></div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════
-     ROADMAP
-═══════════════════════════════════════════════ -->
-<section id="roadmap">
-  <div class="section-eyebrow reveal">Roadmap</div>
-  <h2 class="section-title reveal">Development Timeline</h2>
-  <p class="section-desc reveal">From concept to launch — the full journey ahead.</p>
-
-  <div class="timeline">
-    <div class="tl-item reveal">
-      <div class="tl-dot"></div>
-      <div class="tl-date">2024 – 2025 · Completed</div>
-      <div class="tl-title">Concept &amp; Prototyping</div>
-      <p class="tl-desc">World design, bus physics prototype, and early route mapping for TVM Bus Simulator. Core gameplay loops established.</p>
-    </div>
-    <div class="tl-item reveal" style="transition-delay:.1s">
-      <div class="tl-dot"></div>
-      <div class="tl-date">Q1–Q2 2026 · In Progress</div>
-      <div class="tl-title">TVM Bus Simulator — Beta</div>
-      <p class="tl-desc">Full route implementation, NPC passenger system, weather engine, and polishing for May 2026 launch on PC &amp; Mobile.</p>
-    </div>
-    <div class="tl-item reveal" style="transition-delay:.2s">
-      <div class="tl-dot orange"></div>
-      <div class="tl-date orange">12 MAY 2026 · Launch</div>
-      <div class="tl-title" style="color:var(--orange)">TVM Bus Simulator — Launch 🚀</div>
-      <p class="tl-desc">Official release on PC &amp; Mobile platforms. Vizhinjam to East Fort route live with full NPC, weather &amp; conductor systems.</p>
-    </div>
-    <div class="tl-item reveal" style="transition-delay:.3s">
-      <div class="tl-dot muted"></div>
-      <div class="tl-date muted">Late 2026</div>
-      <div class="tl-title" style="color:var(--muted)">Oye Chor</div>
-      <p class="tl-desc">Development begins post-TVM launch. Endless runner with Punjabi culture, police chase mechanics, and online leaderboards.</p>
-    </div>
-    <div class="tl-item reveal" style="transition-delay:.4s">
-      <div class="tl-dot muted"></div>
-      <div class="tl-date muted">2027</div>
-      <div class="tl-title" style="color:var(--muted)">Yakshiyugam</div>
-      <p class="tl-desc">Horror adventure enters full production. Kerala folklore, atmospheric storytelling, and original voice acting in Malayalam.</p>
+<!-- ══ ROADMAP ══ -->
+<section id="roadmap" style="background:var(--panel);border-top:1px solid var(--border)">
+  <div style="max-width:900px;margin:0 auto;padding:120px clamp(20px,5vw,60px)">
+    <div class="sey reveal">Roadmap</div>
+    <h2 class="stitle reveal">Development Timeline</h2>
+    <p class="sdesc reveal">From concept to launch — the full journey ahead.</p>
+    <div class="timeline">
+      <div class="tl-item reveal"><div class="tl-dot"></div><div class="tl-date">2024 – 2025 · Completed</div><div class="tl-title">Concept &amp; Prototyping</div><p class="tl-desc">World design, bus physics prototype, and early route mapping for TVM Bus Simulator. Core gameplay loops established in Unreal Engine 4.</p></div>
+      <div class="tl-item reveal" style="transition-delay:.1s"><div class="tl-dot"></div><div class="tl-date">Q1–Q2 2026 · In Progress</div><div class="tl-title">TVM Bus Simulator — Beta</div><p class="tl-desc">Full route implementation, NPC passenger system, weather engine, audio design, and UI polishing ahead of May 2026 launch on PC &amp; Mobile.</p></div>
+      <div class="tl-item reveal" style="transition-delay:.2s"><div class="tl-dot or"></div><div class="tl-date or">12 MAY 2026 · Launch 🚀</div><div class="tl-title" style="color:var(--orange)">TVM Bus Simulator — Launch</div><p class="tl-desc">Official release on PC &amp; Mobile. Vizhinjam to East Fort route live with full NPC, conductor, weather, and dynamic day-night systems.</p></div>
+      <div class="tl-item reveal" style="transition-delay:.3s"><div class="tl-dot mu"></div><div class="tl-date mu">Late 2026</div><div class="tl-title" style="color:var(--muted)">Oye Chor</div><p class="tl-desc">Development begins post-TVM launch. Endless runner with Punjabi culture, police chase mechanics, and online leaderboards.</p></div>
+      <div class="tl-item reveal" style="transition-delay:.4s"><div class="tl-dot mu"></div><div class="tl-date mu">2027</div><div class="tl-title" style="color:var(--muted)">Yakshiyugam</div><p class="tl-desc">Horror adventure enters full production. Kerala folklore, atmospheric storytelling, and original voice acting in Malayalam.</p></div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════
-     CONTACT
-═══════════════════════════════════════════════ -->
+<!-- ══ CONTACT ══ -->
 <section id="contact">
-  <div class="contact-inner">
-    <div class="contact-left reveal-left">
-      <div class="section-eyebrow">Contact</div>
-      <h2 class="section-title">Let's Build<br><span class="accent-orange">Something Great</span></h2>
-      <p class="section-desc">Have a collab idea, feedback, or just want to say hi? We're always open to conversations with fellow creators and players.</p>
-
-      <div class="contact-links" style="margin-top:40px">
-        <a href="mailto:malayaleegamer07@gmail.com" class="contact-link">
-          <div class="cl-icon">📧</div>
-          <div class="cl-info">
-            <div class="cl-platform">Email</div>
-            <div class="cl-value">malayaleegamer07@gmail.com</div>
-          </div>
-          <div class="cl-arrow">→</div>
-        </a>
-        <a href="https://www.instagram.com/kalki_chunk/" target="_blank" class="contact-link">
-          <div class="cl-icon" style="background:rgba(255,106,0,.1);border-color:rgba(255,106,0,.2)">📷</div>
-          <div class="cl-info">
-            <div class="cl-platform">Instagram</div>
-            <div class="cl-value">@kalki_chunks</div>
-          </div>
-          <div class="cl-arrow">→</div>
-        </a>
-        <a href="http://www.youtube.com/@malayalamgamer07" target="_blank" class="contact-link">
-          <div class="cl-icon" style="background:rgba(255,61,57,.08);border-color:rgba(255,61,57,.2)">▶️</div>
-          <div class="cl-info">
-            <div class="cl-platform">YouTube</div>
-            <div class="cl-value">Trideva Interactive</div>
-          </div>
-          <div class="cl-arrow">→</div>
-        </a>
-        <a href="#" class="contact-link">
-          <div class="cl-icon" style="background:rgba(88,101,242,.1);border-color:rgba(88,101,242,.2)">💬</div>
-          <div class="cl-info">
-            <div class="cl-platform">Discord</div>
-            <div class="cl-value">Join Community Server</div>
-          </div>
-          <div class="cl-arrow">→</div>
-        </a>
+  <div class="ci">
+    <div class="rl">
+      <div class="sey">Contact</div>
+      <h2 class="stitle">Let's Build<br><span style="color:var(--orange)">Something Great</span></h2>
+      <p class="sdesc">Have a collab idea, feedback, or just want to say hi? We're always open to conversations with fellow creators and players.</p>
+      <div class="cl-links">
+        <a href="mailto:malayaleegamer07@gmail.com" class="cl-link"><div class="cl-icon">📧</div><div class="cl-info"><div class="cl-plat">Email</div><div class="cl-val">malayaleegamer07@gmail.com</div></div><div class="cl-arr">→</div></a>
+        <a href="https://www.instagram.com/kalki_chunk/" target="_blank" class="cl-link"><div class="cl-icon" style="background:rgba(255,106,0,.1);border-color:rgba(255,106,0,.2)">📷</div><div class="cl-info"><div class="cl-plat">Instagram</div><div class="cl-val">@kalki_chunks</div></div><div class="cl-arr">→</div></a>
+        <a href="http://www.youtube.com/@malayalamgamer07" target="_blank" class="cl-link"><div class="cl-icon" style="background:rgba(255,61,57,.08);border-color:rgba(255,61,57,.2)">▶️</div><div class="cl-info"><div class="cl-plat">YouTube</div><div class="cl-val">@malayalamgamer07</div></div><div class="cl-arr">→</div></a>
+        <a href="https://sachinsnair07.github.io" target="_blank" class="cl-link"><div class="cl-icon" style="background:rgba(0,229,160,.08);border-color:rgba(0,229,160,.2)">🌐</div><div class="cl-info"><div class="cl-plat">Website</div><div class="cl-val">sachinsnair07.github.io</div></div><div class="cl-arr">→</div></a>
       </div>
     </div>
-
-    <div class="contact-form reveal-right">
-      <div class="form-grid">
-        <div class="form-row">
-          <label>Your Name</label>
-          <input type="text" placeholder="Enter your name" />
-        </div>
-        <div class="form-row">
-          <label>Email Address</label>
-          <input type="email" placeholder="your@email.com" />
-        </div>
+    <div class="cform rr">
+      <div class="fg">
+        <div class="fr"><label>Your Name</label><input type="text" placeholder="Enter your name"/></div>
+        <div class="fr"><label>Email Address</label><input type="email" placeholder="your@email.com"/></div>
       </div>
-      <div class="form-row">
-        <label>Subject</label>
-        <select>
-          <option value="">Select a topic…</option>
-          <option>Game Feedback</option>
-          <option>Collaboration</option>
-          <option>Press / Media</option>
-          <option>Bug Report</option>
-          <option>Other</option>
-        </select>
-      </div>
-      <div class="form-row">
-        <label>Message</label>
-        <textarea placeholder="Tell us what's on your mind…"></textarea>
-      </div>
-      <button class="btn-submit" onclick="submitForm(this)">Send Message →</button>
+      <div class="fr"><label>Subject</label><select><option value="">Select a topic…</option><option>Game Feedback</option><option>Collaboration</option><option>Press / Media</option><option>Bug Report</option><option>Other</option></select></div>
+      <div class="fr"><label>Message</label><textarea placeholder="Tell us what's on your mind…"></textarea></div>
+      <button class="btn-sub" onclick="sendForm(this)">Send Message →</button>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════
-     FOOTER
-═══════════════════════════════════════════════ -->
+<!-- ══ FOOTER ══ -->
 <footer>
-  <div class="footer-inner">
-    <div class="footer-logo">
-      <div class="footer-logo-mark">🎮</div>
+  <div class="fi">
+    <div class="fl">
+      <img src="1752051798430.png" alt="Trideva" onerror="this.style.display='none'"/>
       TRIDEVA INTERACTIVE
     </div>
-    <div class="footer-links">
-      <a href="#about">About</a>
-      <a href="#games">Games</a>
-      <a href="#work">Work</a>
-      <a href="#roadmap">Roadmap</a>
-      <a href="#contact">Contact</a>
+    <div class="flinks">
+      <a href="#about">About</a><a href="#games">Games</a>
+      <a href="#devprogress">Dev Log</a><a href="#work">Work</a>
+      <a href="#roadmap">Roadmap</a><a href="#contact">Contact</a>
     </div>
   </div>
-  <div class="footer-copy">
+  <div class="fc">
     <p>© 2026 <span>Trideva Interactive</span>. All rights reserved. Made with ❤️ in Kerala, India.</p>
     <p>Built with <span>HTML · CSS · JS</span></p>
   </div>
 </footer>
 
-<!-- ═══════════════════════════════════════════════
-     JAVASCRIPT
-═══════════════════════════════════════════════ -->
 <script>
-// ══════════════════════════════════════════════
-//  LOADER
-// ══════════════════════════════════════════════
-let loadPct = 0;
-const loaderPct = document.getElementById('loader-pct');
-const loaderInterval = setInterval(() => {
-  loadPct += Math.random() * 18 + 4;
-  if (loadPct >= 100) {
-    loadPct = 100;
-    clearInterval(loaderInterval);
-    setTimeout(() => {
-      document.getElementById('loader').classList.add('gone');
-      document.body.style.cursor = 'none';
-    }, 400);
-  }
-  loaderPct.textContent = `LOADING... ${Math.floor(loadPct)}%`;
-}, 80);
+// LOADER
+let p=0;const lp=document.getElementById('lpct');
+const li=setInterval(()=>{ p+=Math.random()*18+5; if(p>=100){p=100;clearInterval(li);setTimeout(()=>document.getElementById('loader').classList.add('gone'),400);} lp.textContent=`LOADING... ${Math.floor(p)}%`; },75);
 
-// ══════════════════════════════════════════════
-//  CUSTOM CURSOR
-// ══════════════════════════════════════════════
-const cursor     = document.getElementById('cursor');
-const cursorRing = document.getElementById('cursor-ring');
-let mx = 0, my = 0, rx = 0, ry = 0;
-
-document.addEventListener('mousemove', e => {
-  mx = e.clientX; my = e.clientY;
-  cursor.style.left = mx + 'px';
-  cursor.style.top  = my + 'px';
-});
-function animRing() {
-  rx += (mx - rx) * 0.14;
-  ry += (my - ry) * 0.14;
-  cursorRing.style.left = rx + 'px';
-  cursorRing.style.top  = ry + 'px';
-  requestAnimationFrame(animRing);
-}
-animRing();
-
-document.querySelectorAll('a, button, .game-card, .gallery-item').forEach(el => {
-  el.addEventListener('mouseenter', () => {
-    cursor.style.transform = 'translate(-50%,-50%) scale(2)';
-    cursor.style.background = 'var(--orange)';
-    cursorRing.style.width  = '56px';
-    cursorRing.style.height = '56px';
-    cursorRing.style.borderColor = 'rgba(255,106,0,.4)';
-  });
-  el.addEventListener('mouseleave', () => {
-    cursor.style.transform = 'translate(-50%,-50%) scale(1)';
-    cursor.style.background = 'var(--blue)';
-    cursorRing.style.width  = '36px';
-    cursorRing.style.height = '36px';
-    cursorRing.style.borderColor = 'rgba(0,168,255,.55)';
-  });
+// CURSOR
+const cur=document.getElementById('cursor'),ring=document.getElementById('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+(function ar(){rx+=(mx-rx)*.14;ry+=(my-ry)*.14;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(ar);})();
+document.querySelectorAll('a,button,.gc,.gi,.dp-thumb,.dp-hero').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cur.style.transform='translate(-50%,-50%) scale(2)';cur.style.background='var(--orange)';ring.style.width='56px';ring.style.height='56px';ring.style.borderColor='rgba(255,106,0,.4)';});
+  el.addEventListener('mouseleave',()=>{cur.style.transform='translate(-50%,-50%) scale(1)';cur.style.background='var(--blue)';ring.style.width='36px';ring.style.height='36px';ring.style.borderColor='rgba(0,168,255,.55)';});
 });
 
-// ══════════════════════════════════════════════
-//  HERO CANVAS PARTICLES
-// ══════════════════════════════════════════════
-const c = document.getElementById('hero-canvas');
-const ctx = c.getContext('2d');
-let W, H, particles = [];
+// HERO CANVAS PARTICLES
+const cv=document.getElementById('hero-canvas'),ctx=cv.getContext('2d');
+let W,H,pts=[];
+function rc(){W=cv.width=cv.offsetWidth;H=cv.height=cv.offsetHeight;}
+rc();window.addEventListener('resize',()=>{rc();ip();});
+class P{constructor(){this.rst();}rst(){this.x=Math.random()*W;this.y=Math.random()*H;this.vx=(Math.random()-.5)*.4;this.vy=(Math.random()-.5)*.4-.08;this.r=Math.random()*1.5+.3;this.l=0;this.ml=Math.random()*200+100;this.c=Math.random()<.6?'0,168,255':'255,106,0';}up(){this.x+=this.vx;this.y+=this.vy;this.l++;if(this.l>this.ml||this.x<0||this.x>W||this.y<0||this.y>H)this.rst();}dr(){const a=Math.sin((this.l/this.ml)*Math.PI)*.55;ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fillStyle=`rgba(${this.c},${a})`;ctx.fill();}}
+function ip(){pts=[];const n=Math.min(100,Math.floor((W*H)/9000));for(let i=0;i<n;i++)pts.push(new P());}
+ip();
+function dl(){for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<85){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.strokeStyle=`rgba(0,168,255,${(1-d/85)*.1})`;ctx.lineWidth=.5;ctx.stroke();}}}
+(function lo(){ctx.clearRect(0,0,W,H);dl();pts.forEach(p=>{p.up();p.dr();});requestAnimationFrame(lo);})();
 
-function resizeCanvas() {
-  W = c.width  = c.offsetWidth;
-  H = c.height = c.offsetHeight;
-}
-resizeCanvas();
-window.addEventListener('resize', () => { resizeCanvas(); initParticles(); });
+// TYPEWRITER
+const phr=['Realistic simulation games for everyone.','Inspired by Kerala — designed for the world.','From Thiruvananthapuram roads to your screen.','Solo developer. Infinite ambition.','Three games. One dream. Pure passion.'];
+let pi=0,ci=0,dl2=false;const tw=document.getElementById('tw');
+function tl(){const ph=phr[pi];if(!dl2){tw.textContent=ph.slice(0,++ci);if(ci===ph.length){dl2=true;setTimeout(tl,1800);return;}setTimeout(tl,52);}else{tw.textContent=ph.slice(0,--ci);if(ci===0){dl2=false;pi=(pi+1)%phr.length;setTimeout(tl,400);return;}setTimeout(tl,28);}}
+setTimeout(tl,2600);
 
-class Particle {
-  constructor() { this.reset(); }
-  reset() {
-    this.x  = Math.random() * W;
-    this.y  = Math.random() * H;
-    this.vx = (Math.random() - .5) * .4;
-    this.vy = (Math.random() - .5) * .4 - .1;
-    this.r  = Math.random() * 1.5 + .3;
-    this.life = Math.random();
-    this.maxLife = Math.random() * 200 + 100;
-    this.type = Math.random() < .7 ? 'dot' : 'line';
-    this.col = Math.random() < .6 ? '0,168,255' : '255,106,0';
-  }
-  update() {
-    this.x += this.vx; this.y += this.vy; this.life++;
-    if (this.life > this.maxLife || this.x < 0 || this.x > W || this.y < 0 || this.y > H) this.reset();
-  }
-  draw() {
-    const a = Math.sin((this.life / this.maxLife) * Math.PI) * .6;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${this.col},${a})`;
-    ctx.fill();
-  }
-}
+// SCROLL
+const nb=document.getElementById('navbar'),pb=document.getElementById('progress-bar'),bt=document.getElementById('back-top');
+window.addEventListener('scroll',()=>{
+  const st=window.scrollY,th=document.body.scrollHeight-window.innerHeight;
+  nb.classList.toggle('scrolled',st>50);
+  pb.style.width=(st/th*100)+'%';
+  bt.classList.toggle('visible',st>400);
+  document.querySelectorAll('.reveal,.rl,.rr').forEach(el=>{if(el.getBoundingClientRect().top<window.innerHeight-80)el.classList.add('visible');});
+  document.querySelectorAll('.sk-fill').forEach(el=>{const r=el.closest('.about-right')?.getBoundingClientRect();if(r&&r.top<window.innerHeight-60)el.style.width=el.dataset.width+'%';});
+  document.querySelectorAll('.mfill').forEach(el=>{const r=el.closest('.dp-meters')?.getBoundingClientRect();if(r&&r.top<window.innerHeight-60)el.style.width=el.dataset.width+'%';});
+  document.querySelectorAll('.stat-num[data-count]').forEach(el=>{if(el.getBoundingClientRect().top<window.innerHeight-40&&!el.dataset.done){el.dataset.done='1';cu(el,+el.dataset.count);}});
+});
+setTimeout(()=>window.dispatchEvent(new Event('scroll')),300);
+function cu(el,t){const s=Date.now();(function f(){const p2=Math.min((Date.now()-s)/1200,1),e=1-Math.pow(1-p2,3);el.textContent=Math.floor(e*t);if(p2<1)requestAnimationFrame(f);else el.textContent=t;})();}
 
-function initParticles() {
-  particles = [];
-  const n = Math.min(120, Math.floor((W * H) / 8000));
-  for (let i = 0; i < n; i++) particles.push(new Particle());
-}
-initParticles();
+// MOBILE MENU
+function toggleMenu(){const m=document.getElementById('mmenu'),h=document.getElementById('ham');m.classList.toggle('open');const s=h.querySelectorAll('span');if(m.classList.contains('open')){s[0].style.transform='rotate(45deg) translate(5px,5px)';s[1].style.opacity='0';s[2].style.transform='rotate(-45deg) translate(5px,-5px)';}else{s.forEach(x=>{x.style.transform='';x.style.opacity='1';});}}
 
-// Connection lines
-function drawConnections() {
-  for (let i = 0; i < particles.length; i++) {
-    for (let j = i + 1; j < particles.length; j++) {
-      const dx = particles[i].x - particles[j].x;
-      const dy = particles[i].y - particles[j].y;
-      const d  = Math.sqrt(dx*dx + dy*dy);
-      if (d < 90) {
-        const a = (1 - d/90) * 0.12;
-        ctx.beginPath();
-        ctx.moveTo(particles[i].x, particles[i].y);
-        ctx.lineTo(particles[j].x, particles[j].y);
-        ctx.strokeStyle = `rgba(0,168,255,${a})`;
-        ctx.lineWidth = .5;
-        ctx.stroke();
-      }
-    }
-  }
-}
-
-function heroLoop() {
-  ctx.clearRect(0, 0, W, H);
-  drawConnections();
-  particles.forEach(p => { p.update(); p.draw(); });
-  requestAnimationFrame(heroLoop);
-}
-heroLoop();
-
-// ══════════════════════════════════════════════
-//  TYPEWRITER
-// ══════════════════════════════════════════════
-const phrases = [
-  'Realistic simulation games for everyone.',
-  'Inspired by Kerala — designed for the world.',
-  'From Thiruvananthapuram roads to your screen.',
-  'Solo developer. Infinite ambition.',
-  'Three games. One dream. Pure passion.',
+// LIGHTBOX
+const lbSrcs=[
+  {src:'Screenshot 2025-07-31 183928.png',cap:'Road & Environment System — UE4'},
+  {src:'Screenshot 2025-07-31 184004.png',cap:'Environment Detail Pass'},
+  {src:'Screenshot 2025-07-31 184226.png',cap:'Bus Placement & Road Layout'},
+  {src:'Screenshot 2025-07-31 184622.png',cap:'Route Testing — Vizhinjam to East Fort'},
+  {src:'Screenshot 2025-07-31 184840.png',cap:'Lighting & Visual Effects Pass'},
 ];
-let pi = 0, ci = 0, deleting = false;
-const tw = document.getElementById('typewriter');
+let lbIdx=0;
+function lbOpen(i){lbIdx=i;document.getElementById('lb-img').src=lbSrcs[i].src;document.getElementById('lb-cap').textContent=`${i+1} / ${lbSrcs.length} — ${lbSrcs[i].cap}`;document.getElementById('lightbox').classList.add('open');document.body.style.overflow='hidden';}
+function lbClose(){document.getElementById('lightbox').classList.remove('open');document.body.style.overflow='';}
+function lbBg(e){if(e.target===document.getElementById('lightbox'))lbClose();}
+function lbNav(d){lbIdx=(lbIdx+d+lbSrcs.length)%lbSrcs.length;document.getElementById('lb-img').src=lbSrcs[lbIdx].src;document.getElementById('lb-cap').textContent=`${lbIdx+1} / ${lbSrcs.length} — ${lbSrcs[lbIdx].cap}`;}
+document.addEventListener('keydown',e=>{if(document.getElementById('lightbox').classList.contains('open')){if(e.key==='ArrowRight')lbNav(1);if(e.key==='ArrowLeft')lbNav(-1);if(e.key==='Escape')lbClose();}});
 
-function typeLoop() {
-  const phrase = phrases[pi];
-  if (!deleting) {
-    tw.textContent = phrase.slice(0, ++ci);
-    if (ci === phrase.length) { deleting = true; setTimeout(typeLoop, 1800); return; }
-    setTimeout(typeLoop, 52);
-  } else {
-    tw.textContent = phrase.slice(0, --ci);
-    if (ci === 0) { deleting = false; pi = (pi + 1) % phrases.length; setTimeout(typeLoop, 400); return; }
-    setTimeout(typeLoop, 28);
-  }
-}
-setTimeout(typeLoop, 2400);
+// CONTACT FORM
+function sendForm(b){b.textContent='Sending…';b.style.opacity='.7';setTimeout(()=>{b.textContent='✓ Message Sent!';b.style.background='#00c896';b.style.opacity='1';setTimeout(()=>{b.textContent='Send Message →';b.style.background='';},3000);},1200);}
 
-// ══════════════════════════════════════════════
-//  SCROLL EVENTS
-// ══════════════════════════════════════════════
-const navbar     = document.getElementById('navbar');
-const progressBar = document.getElementById('progress-bar');
-const backTop    = document.getElementById('back-top');
+// PARALLAX GLOWS
+const hgc=document.querySelector('.hero-gc'),hgo=document.querySelector('.hero-go');
+document.addEventListener('mousemove',e=>{const xp=(e.clientX/window.innerWidth-.5)*28,yp=(e.clientY/window.innerHeight-.5)*28;hgc.style.transform=`translate(calc(-50% + ${xp}px),calc(-50% + ${yp}px))`;hgo.style.transform=`translate(calc(-50% + ${-xp*.5}px),calc(-50% + ${-yp*.5}px))`;});
 
-window.addEventListener('scroll', () => {
-  const st = window.scrollY;
-  const th = document.body.scrollHeight - window.innerHeight;
-
-  // Navbar
-  navbar.classList.toggle('scrolled', st > 50);
-
-  // Progress bar
-  progressBar.style.width = (st / th * 100) + '%';
-
-  // Back to top
-  backTop.classList.toggle('visible', st > 400);
-
-  // Reveal elements
-  document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(el => {
-    const rect = el.getBoundingClientRect();
-    if (rect.top < window.innerHeight - 80) el.classList.add('visible');
-  });
-
-  // Skill bars
-  document.querySelectorAll('.skill-fill').forEach(el => {
-    const rect = el.closest('.about-right')?.getBoundingClientRect();
-    if (rect && rect.top < window.innerHeight - 60) {
-      el.style.width = el.dataset.width + '%';
-    }
-  });
-
-  // Count-up stats
-  document.querySelectorAll('.stat-num[data-count]').forEach(el => {
-    const rect = el.getBoundingClientRect();
-    if (rect.top < window.innerHeight - 40 && !el.dataset.done) {
-      el.dataset.done = '1';
-      countUp(el, parseInt(el.dataset.count));
-    }
-  });
-});
-
-function countUp(el, target) {
-  const dur = 1200;
-  const start = Date.now();
-  function tick() {
-    const t = Math.min((Date.now() - start) / dur, 1);
-    const ease = 1 - Math.pow(1 - t, 3);
-    el.textContent = Math.floor(ease * target);
-    if (t < 1) requestAnimationFrame(tick);
-    else el.textContent = target;
-  }
-  tick();
-}
-
-// Trigger on load
-setTimeout(() => window.dispatchEvent(new Event('scroll')), 200);
-
-// ══════════════════════════════════════════════
-//  MOBILE MENU
-// ══════════════════════════════════════════════
-function toggleMenu() {
-  const menu = document.getElementById('mobileMenu');
-  const ham  = document.getElementById('hamburger');
-  menu.classList.toggle('open');
-  const spans = ham.querySelectorAll('span');
-  if (menu.classList.contains('open')) {
-    spans[0].style.transform = 'rotate(45deg) translate(5px,5px)';
-    spans[1].style.opacity = '0';
-    spans[2].style.transform = 'rotate(-45deg) translate(5px,-5px)';
-  } else {
-    spans[0].style.transform = '';
-    spans[1].style.opacity = '1';
-    spans[2].style.transform = '';
-  }
-}
-
-// ══════════════════════════════════════════════
-//  CONTACT FORM
-// ══════════════════════════════════════════════
-function submitForm(btn) {
-  btn.textContent = 'Sending…';
-  btn.style.opacity = '.7';
-  setTimeout(() => {
-    btn.textContent = '✓ Message Sent!';
-    btn.style.background = '#00c896';
-    btn.style.opacity = '1';
-    setTimeout(() => {
-      btn.textContent = 'Send Message →';
-      btn.style.background = '';
-    }, 3000);
-  }, 1200);
-}
-
-// ══════════════════════════════════════════════
-//  PARALLAX HERO GLOW
-// ══════════════════════════════════════════════
-const heroGlow = document.querySelector('.hero-glow-center');
-const heroOrange = document.querySelector('.hero-glow-orange');
-document.addEventListener('mousemove', e => {
-  const xp = (e.clientX / window.innerWidth  - .5) * 30;
-  const yp = (e.clientY / window.innerHeight - .5) * 30;
-  heroGlow.style.transform   = `translate(calc(-50% + ${xp}px), calc(-50% + ${yp}px))`;
-  heroOrange.style.transform = `translate(calc(-50% + ${-xp*.5}px), calc(-50% + ${-yp*.5}px))`;
-});
-
-// ══════════════════════════════════════════════
-//  GALLERY RIPPLE
-// ══════════════════════════════════════════════
-document.querySelectorAll('.gallery-item').forEach(item => {
-  item.addEventListener('click', function(e) {
-    const ripple = document.createElement('div');
-    const rect = this.getBoundingClientRect();
-    const size = Math.max(rect.width, rect.height) * 2;
-    ripple.style.cssText = `
-      position:absolute;
-      width:${size}px;height:${size}px;
-      left:${e.clientX-rect.left-size/2}px;
-      top:${e.clientY-rect.top-size/2}px;
-      background:rgba(0,168,255,.2);
-      border-radius:50%;
-      transform:scale(0);
-      animation:rippleAnim .6s ease forwards;
-      pointer-events:none;
-      z-index:10;
-    `;
-    this.appendChild(ripple);
-    setTimeout(() => ripple.remove(), 650);
-  });
-});
-
-// Ripple keyframe
-const rippleStyle = document.createElement('style');
-rippleStyle.textContent = '@keyframes rippleAnim{to{transform:scale(1);opacity:0}}';
-document.head.appendChild(rippleStyle);
+// GALLERY RIPPLE
+const rs=document.createElement('style');rs.textContent='@keyframes rip{to{transform:scale(1);opacity:0}}';document.head.appendChild(rs);
+document.querySelectorAll('.gi').forEach(el=>el.addEventListener('click',function(e){const rp=document.createElement('div'),rc=this.getBoundingClientRect(),sz=Math.max(rc.width,rc.height)*2;rp.style.cssText=`position:absolute;width:${sz}px;height:${sz}px;left:${e.clientX-rc.left-sz/2}px;top:${e.clientY-rc.top-sz/2}px;background:rgba(0,168,255,.18);border-radius:50%;transform:scale(0);animation:rip .6s ease forwards;pointer-events:none;z-index:10`;this.appendChild(rp);setTimeout(()=>rp.remove(),650);}));
 </script>
 </body>
 </html>
-    
- 
-       
         
         
         
